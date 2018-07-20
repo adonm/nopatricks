@@ -135,12 +135,12 @@ class Bot(object): # nanobot
 
     def fill(self, nd):
         p = self.coord + nd
-        if self.state.matrix[p] == 0:
+        if self.state.matrix[p] == Matrix.VOID:
             if would_be_grounded(self.state, p):
-                self.state.matrix[p] = 2
+                self.state.matrix[p] = Matrix.GROUNDED
                 self.state.ground_adjacent(p)
             else:
-                self.state.matrix[p] = 1
+                self.state.matrix[p] = Matrix.FULL
                 ungrounded.add(p)
             
             self.state.energy += 12
