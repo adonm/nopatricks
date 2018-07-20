@@ -4,15 +4,38 @@ from coord import Coord
 from mrcrowbar.utils import to_uint64_be, unpack_bits
 import commands
 
-@dataclass
 class Matrix(object):
+    """ Matrix(size=R) initialises an empty matrix
+        Matrix(problem=N) loads problem N
+        Matrix(filename="foo.mdl") loads model file"""
+
     VOID = 0
     FULL = 1
     GROUNDED = 2
-    size: int = 0
-    state: list = field(default_factory=list)
-    ungrounded: set
     # 0 = empty, 1 = filled, 2 = filled and grounded
+
+    def __init__(self, **kwargs):
+        self.ungrounded = set()
+        if 'size' in kwargs:
+            self.size = kwargs['size']
+            self.state = [Matrix.VOID] * (self.size ** 3)
+        elif 'filename' in kwargs:
+            self.size, self.state = Matrix._load_file(kwargs['filename'])
+        else:
+            self.size, self.state = Matrix._load_prob(kwargs.get('problem', 1))
+
+    @staticmethod
+    def _load_prob(num):
+        return Matrix._load_file("problemsL/LA%03d_tgt.mdl" % num)
+
+    @staticmethod
+    def _load_file(filename):
+        bytedata = open(filename, 'rb').read()
+        size = int(bytedata[0])
+        state = []
+        for byte in bytedata[1:]:
+            state.extend( to_uint64_be( unpack_bits( byte ) ) )
+        return size, state
 
     def coord_index(self, coord):
         return coord.x * self.size * self.size + coord.y * self.size + coord.z
@@ -22,12 +45,6 @@ class Matrix(object):
 
     def __setitem__(self, key, value):
         self.state[self.coord_index(key)] = value
-
-    def load(self, filename="problemsL/LA001_tgt.mdl"):
-        bytedata = open(filename, 'rb').read()
-        self.size = int(bytedata[0])
-        for byte in bytedata[1:]:
-            self.state.extend( to_uint64_be( unpack_bits( byte ) ) )
 
     def ground_adjacent(self, gc):
         stack = [gc]
