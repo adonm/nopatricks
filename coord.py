@@ -6,6 +6,9 @@ class Axis(Enum):
     Y = 2
     Z = 3
 
+    def get(self, obj):
+        return astuple(obj)[self.value - 1]
+
 @dataclass
 class Coord:
     x: int
@@ -165,8 +168,15 @@ class Line:
         return f"[{self.c1}, {self.c2}]"
 
     def contains(self, coord):
-        def within(val, v1, v2):
-            return (min(v1, v2) <= val and val <= max(v1, v2))
+        def within(axis):
+            val = axis.get(coord)
+            lower, upper = minmax(axis.get(self.c1), axis.get(self.c2))
+            return lower <= val and val <= upper
 
-        return within(coord.x, self.c1.x, self.c2.x) and within(coord.y, self.c1.y, self.c2.y) and within(coord.z, self.c1.z, self.c2.z)
+        return within(Axis.X) and within(Axis.Y) and within(Axis.Z)
 
+
+def minmax(a, b):
+    if a > b:
+        return b, a
+    return a, b
