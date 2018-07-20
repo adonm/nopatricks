@@ -11,6 +11,7 @@ class Matrix(object):
     GROUNDED = 2
     size: int = 0
     state: list = field(default_factory=list)
+    ungrounded: set
     # 0 = empty, 1 = filled, 2 = filled and grounded
 
     def coord_index(self, coord):
@@ -34,6 +35,7 @@ class Matrix(object):
             g = stack.pop()
             for v in [x for x in g.adjacent(self.size) if self[x] == Matrix.FILLED]:
                 self[v] = Matrix.GROUNDED
+                ungrounded.remove(v)
                 stack.push(v)
         
     def calc_grounded(self):
@@ -117,7 +119,13 @@ class Bot(object): # nanobot
     def fill(self, nd):
         p = self.coord + nd
         if self.state.matrix[p] == 0:
-            self.state.matrix[p] = 2 if is_grounded(self.state, p) else 1
+            if would_be_grounded(self.state, p):
+                self.state.matrix[p] = 2
+                self.state.ground_adjacent(p)
+            else:
+                self.state.matrix[p] = 1
+                ungrounded.add(p)
+            
             self.state.energy += 12
         else:
             self.state.energy += 6
