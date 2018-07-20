@@ -3,9 +3,15 @@ from dataclasses import dataclass, astuple
 from coord import Coord
 
 @dataclass
+class Voxel(object):
+    coord: Coord
+    full: bool
+    grounded: bool
+
+@dataclass
 class Matrix(object):
     size: int
-    coords: list
+    voxels: list
 
 @dataclass
 class Bot(object): # nanobot
