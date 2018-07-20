@@ -5,6 +5,9 @@ from mrcrowbar.utils import to_uint64_be, unpack_bits
 
 @dataclass
 class Matrix(object):
+    VOID = 0
+    FILLED = 1
+    GROUNDED = 2
     size: int = 0
     state: list = field(default_factory=list)
     # 0 = empty, 1 = filled, 2 = filled and grounded
@@ -24,14 +27,19 @@ class Matrix(object):
         for byte in bytedata[1:]:
             self.state.extend( to_uint64_be( unpack_bits( byte ) ) )
 
+    def ground_adjacent(self, gc):
+        for c in gc.adjacent(self.size):
+            if self[c] == Matrix.FILLED:
+                self[c] = Matrix.GROUNDED
+                self.ground_adjacent(c)
+
     def calc_grounded(self):
         for x in range(0, self.size - 1):
             for z in range(0, self.size - 1):
-                if self[Coord(x,0,z)] == 1:
-                    self[Coord(x,0,z)] = 2
-                    for c in Coord(x,0,z).adjacent(self.size):
-                        if self[c] == 1:
-                            self[c] = 2
+                c = Coord(x,0,z)
+                if self[c] == Matrix.FILLED:
+                    self[c] = Matrix.GROUNDED
+                    self.ground_adjacent(c)
 
 @dataclass
 class Bot(object): # nanobot
