@@ -16,6 +16,17 @@ class SMove( mrc.Block ):
     llda = mrc.Bits( 0x00, 0b0011000000000000, size=2 )
     lldi = mrc.Bits( 0x00, 0b0000000000011111, size=2 )
 
+    def set_lld( self, x, y, z ):
+        if (x == y == 0):
+            self.lldz = z
+        elif (x == z == 0):
+            self.lldy = y
+        elif (y == z == 0):
+            self.lldx = x
+        else:
+            raise ValueError( 'only one axis allowed' )
+        return self
+
     @property
     def lldx( self ):
         return 0 if self.llda != 0b01 else (self.lldi - 15)
@@ -57,6 +68,28 @@ class LMove( mrc.Block ):
     sld1a = mrc.Bits( 0x00, 0b0011000000000000, size=2 )
     sld2i = mrc.Bits( 0x00, 0b0000000011110000, size=2 )
     sld1i = mrc.Bits( 0x00, 0b0000000000001111, size=2 )
+
+    def set_sld1( self, x, y, z ):
+        if (x == y == 0):
+            self.sld1z = z
+        elif (x == z == 0):
+            self.sld1y = y
+        elif (y == z == 0):
+            self.sld1x = x
+        else:
+            raise ValueError( 'only one axis allowed' )
+        return self
+
+    def set_sld2( self, x, y, z ):
+        if (x == y == 0):
+            self.sld2z = z
+        elif (x == z == 0):
+            self.sld2y = y
+        elif (y == z == 0):
+            self.sld2x = x
+        else:
+            raise ValueError( 'only one axis allowed' )
+        return self
 
     @property
     def sld2x( self ):
@@ -124,6 +157,12 @@ class LMove( mrc.Block ):
 
 
 class NDBase( mrc.Block ):
+    def set_nd( self, x, y, z ):
+        self.ndx = x
+        self.ndy = y
+        self.ndz = z
+        return self
+
     @property
     def ndx( self ):
         return (self.nd // 9)-1
@@ -168,6 +207,10 @@ class Fission( NDBase ):
     const = mrc.Const( mrc.Bits( 0x00, 0b00000111, size=1 ), 0b101 )
     nd = mrc.Bits( 0x00, 0b11111000, size=1 )
     m = mrc.UInt8( 0x01 )
+
+    def set_m( self, m ):
+        self.m = m
+        return self
 
     @property
     def repr( self ):
