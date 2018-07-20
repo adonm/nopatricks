@@ -105,3 +105,8 @@ def fill(S, bid, nd):
         S.energy += 12
     else:
         S.energy += 6
+
+def fusion(S, prim, sec):
+    S.bots = [b for b in S.bots if b.bid!=sec.bid]
+    prim.seeds = prim.seeds + sec.seeds
+    S.energy -= 24
