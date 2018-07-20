@@ -3,25 +3,25 @@ from dataclasses import dataclass, astuple
 from coord import Coord
 from mrcrowbar.utils import to_uint64_be, unpack_bits
 
-
-@dataclass
-class Voxel(object):
-    coord: Coord
-    full: bool
-    grounded: bool
-
 @dataclass
 class Matrix(object):
     size: int
-    coords: list
-    filled_coords: list
-    voxels: list
+    state: list # 0 = empty, 1 = filled, 2 = filled and grounded
 
-    def load(self, filename):
-        bytedata = open("problemsL/LA001_tgt.mdl", 'rb').read()
+    def coord_index(self, coord):
+        return coord.x * self.size * self.size + coord.y * self.size + coord.z
+
+    def get_state(self, coord):
+        return self.state[self.coord_index(coord)]
+
+    def set_state(self, coord, value):
+        self.state[self.coord_index(coord)] = value
+
+    def load(self, filename="problemsL/LA001_tgt.mdl"):
+        bytedata = open(filename, 'rb').read()
         self.size = int(bytedata[0])
         for byte in bytedata[1:]:
-            self.filled_coords.extend( to_uint64_be( unpack_bits( byte ) ) )
+            self.state.extend( to_uint64_be( unpack_bits( byte ) ) )
 
 @dataclass
 class Bot(object): # nanobot
