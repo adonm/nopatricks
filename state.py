@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 from dataclasses import dataclass, astuple, field
 from coord import Coord
-from mrcrowbar.utils import to_uint64_be, unpack_bits
+from mrcrowbar.utils import to_uint64_le, unpack_bits
 import commands
 
 class Matrix(object):
@@ -34,7 +34,7 @@ class Matrix(object):
         size = int(bytedata[0])
         state = []
         for byte in bytedata[1:]:
-            state.extend( to_uint64_be( unpack_bits( byte ) ) )
+            state.extend( to_uint64_le( unpack_bits( byte ) ) )
         return size, state
 
     def coord_index(self, coord):
