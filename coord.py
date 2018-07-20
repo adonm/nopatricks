@@ -6,7 +6,7 @@ class Coord:
     y: int
     z: int
 
-    def add(self, diff):
+    def __add__(self, diff):
         return Coord(self.x + diff.dx, self.y + diff.dy, self.z + diff.dz)
 
     def __repr__(self):
