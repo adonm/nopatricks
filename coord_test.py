@@ -1,5 +1,5 @@
 import unittest
-from coord import Coord, adjacent_coords
+from coord import Coord
 class TestCoords(unittest.TestCase):
 
     def test_adj_6(self):

@@ -47,7 +47,7 @@ class State(object):
     bots: list
 
 
-def step(S):
+def step(S, R):
     if S.harmonics == True:
         S.energy += 30 * R * R * R
     else:
@@ -67,7 +67,7 @@ def flip(S):
 
 def find_bot(S, bid):
     for b in S.bots:
-        if b.bid === bid:
+        if b.bid == bid:
             return b
 
 def smove(S, bid, diff):
@@ -83,12 +83,12 @@ def lmove(S, bid, diff1, diff2):
 def fission(S, bid, nd, m):
     b = find_bot(s, bid)
     f = Bot(b.seeds[0], b.coord + nd, b.seeds[1:m+1])
-    b.seeds = [m+2:]
+    b.seeds = b.seeds[m+2:]
     S.bots.append(f)
     S.energy += 24
 
 def is_grounded(S, p):
-    return len([x for x in adjacent_coords(p) if S.matrix[x]===2]) > 0
+    return len([x for x in p.adjacent(S.matrix.size) if S.matrix[x]==2]) > 0
 
 def fill(S, bid, nd):
     p = bid.coord + nd
