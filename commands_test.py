@@ -54,6 +54,13 @@ class TestCommands(unittest.TestCase):
         self.assertEqual( (s.ndx, s.ndy, s.ndz), (0, -1, 0) )
         self.assertEqual( s.export_data(), dat )
 
+    def test_roundtrip( self ):
+        with open('dfltTracesL/LA095.nbt', 'rb') as f:
+            data = f.read()
+            cmds = commands.read_nbt_iter( data )
+            out = commands.export_nbt( cmds )
+            self.assertEqual( data, out )
+
         
 if __name__ == '__main__':
     unittest.main()

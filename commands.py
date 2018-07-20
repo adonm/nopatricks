@@ -221,47 +221,50 @@ class Fill( NDBase ):
     nd = mrc.Bits( 0x00, 0b11111000, size=1 )
 
 
-
 def read_nbt( data ):
+    return [x for x in read_nbt_iter( data )]
+
+
+def read_nbt_iter( data ):
     pointer = 0
-    result = []
     while pointer < len( data ):
         if data[pointer] == 0xff:
-            result.append( Halt() )
+            yield Halt()
             pointer += 1
         elif data[pointer] == 0xfe:
-            result.append( Wait() )
+            yield Wait()
             pointer += 1
         elif data[pointer] == 0xfd:
-            result.append( Flip() )
+            yield Flip()
             pointer += 1
         elif data[pointer] & 0b1111 == 0b0100:
-            result.append( SMove( data[pointer:] ) )
+            yield SMove( data[pointer:pointer+2] )
             pointer += 2
         elif data[pointer] & 0b1111 == 0b1100:
-            result.append( LMove( data[pointer:] ) )
+            yield LMove( data[pointer:pointer+2] )
             pointer += 2
         elif data[pointer] & 0b111 == 0b111:
-            result.append( FusionP( data[pointer:] ) )
+            yield FusionP( data[pointer:pointer+1] )
             pointer += 1
         elif data[pointer] & 0b111 == 0b110:
-            result.append( FusionS( data[pointer:] ) )
+            yield FusionS( data[pointer:pointer+1] )
             pointer += 1
         elif data[pointer] & 0b111 == 0b101:
-            result.append( Fission( data[pointer:] ) )
+            yield Fission( data[pointer:pointer+2] )
             pointer += 2
         elif data[pointer] & 0b111 == 0b011:
-            result.append( Fill( data[pointer:] ) )
+            yield Fill( data[pointer:pointer+1] )
             pointer += 1
         else:
             raise ValueError( 'wasn\'t expecting a {:02x} at {}'.format( data[pointer], pointer ) )
 
-    return result
-
+    return
 
 def export_nbt( commands ):
     result = bytearray()
-    for c in commands:
+    for i, c in enumerate(commands):
+        if i % 1000 == 0:
+            print(i)
         result.extend( c.export_data() )
     return result
 
