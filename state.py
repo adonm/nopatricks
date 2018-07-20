@@ -4,21 +4,54 @@ from coord import Coord
 from mrcrowbar.utils import to_uint64_le, unpack_bits
 import commands
 
+class Voxel(int):
+    """ Voxel represents mutable location information """
+
+    # current implementation is a bitmask held in an int
+    # the first few bits are the filled state
+    VOID = 0
+    FULL = 1
+    GROUNDED = 2
+
+    # the model bit is on if this location forms part of the target model
+    MODEL = 1 << 7
+
+    @staticmethod
+    def empty(is_model=False):
+        """ Initialises an empty voxel which is part of the model or not. """
+        if is_model:
+            return Voxel(Voxel.MODEL)
+        return Voxel(Voxel.VOID)
+
+    # access to state is via functions so the implementation is free to change
+    def is_void(self):
+        return not self & Voxel.FULL
+
+    def is_full(self):
+        return self & Voxel.FULL
+
+    def is_grounded(self):
+        return self & Voxel.GROUNDED
+
+    def set_grounded(self):
+        assert self & Voxel.FULL
+        self |= Voxel.GROUNDED
+
+    def set_full(self):
+        assert not (self & Voxel.FULL)
+        self |= Voxel.FULL
+
+
 class Matrix(object):
     """ Matrix(size=R) initialises an empty matrix
         Matrix(problem=N) loads problem N
         Matrix(filename="foo.mdl") loads model file"""
 
-    VOID = 0
-    FULL = 1
-    GROUNDED = 2
-    # 0 = empty, 1 = filled, 2 = filled and grounded
-
     def __init__(self, **kwargs):
         self.ungrounded = set()
         if 'size' in kwargs:
             self.size = kwargs['size']
-            self.state = [Matrix.VOID] * (self.size ** 3)
+            self.state = [Voxel.empty() for i in range(self.size ** 3)]
         elif 'filename' in kwargs:
             self.size, self.state = Matrix._load_file(kwargs['filename'])
         else:
@@ -34,7 +67,8 @@ class Matrix(object):
         size = int(bytedata[0])
         state = []
         for byte in bytedata[1:]:
-            state.extend( to_uint64_le( unpack_bits( byte ) ) )
+            for bit in to_uint64_le( unpack_bits( byte ) ):
+                state.append(Voxel.empty(bit))
         return size, state
 
     def coord_index(self, coord):
@@ -50,8 +84,8 @@ class Matrix(object):
         stack = [gc]
         while len(stack) > 0:
             g = stack.pop()
-            for v in [x for x in g.adjacent(self.size) if self[x] == Matrix.FILLED]:
-                self[v] = Matrix.GROUNDED
+            for v in [x for x in g.adjacent(self.size) if self[x].is_full()]:
+                self[v].set_grounded()
                 ungrounded.remove(v)
                 stack.push(v)
         
@@ -60,12 +94,12 @@ class Matrix(object):
         for x in range(0, self.size - 1):
             for z in range(0, self.size - 1):
                 c = Coord(x,0,z)
-                if self[c] == Matrix.FULL:
-                    self[c] = Matrix.GROUNDED
+                if self[c].is_full():
+                    self[c].set_grounded()
                     self.ground_adjacent(c)
 
     def would_be_grounded(self, p):
-        return len([x for x in p.adjacent(self.size) if self[x]==Matrix.GROUNDED]) > 0
+        return len([x for x in p.adjacent(self.size) if self[x].is_grounded()]) > 0
 
 
 @dataclass
@@ -135,12 +169,12 @@ class Bot(object): # nanobot
 
     def fill(self, nd):
         p = self.coord + nd
-        if self.state.matrix[p] == Matrix.VOID:
+        if self.state.matrix[p].is_void():
+            self.state.matrix[p].set_full()
             if would_be_grounded(self.state, p):
-                self.state.matrix[p] = Matrix.GROUNDED
+                self.state.matrix[p].set_grounded()
                 self.state.ground_adjacent(p)
             else:
-                self.state.matrix[p] = Matrix.FULL
                 ungrounded.add(p)
             
             self.state.energy += 12
