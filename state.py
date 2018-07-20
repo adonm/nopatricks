@@ -6,7 +6,7 @@ from mrcrowbar.utils import to_uint64_be, unpack_bits
 @dataclass
 class Matrix(object):
     VOID = 0
-    FILLED = 1
+    FULL = 1
     GROUNDED = 2
     size: int = 0
     state: list = field(default_factory=list)
@@ -29,7 +29,7 @@ class Matrix(object):
 
     def ground_adjacent(self, gc):
         for c in gc.adjacent(self.size):
-            if self[c] == Matrix.FILLED:
+            if self[c] == Matrix.FULL:
                 self[c] = Matrix.GROUNDED
                 self.ground_adjacent(c)
 
@@ -37,15 +37,53 @@ class Matrix(object):
         for x in range(0, self.size - 1):
             for z in range(0, self.size - 1):
                 c = Coord(x,0,z)
-                if self[c] == Matrix.FILLED:
+                if self[c] == Matrix.FULL:
                     self[c] = Matrix.GROUNDED
                     self.ground_adjacent(c)
+
+    def would_be_grounded(self, p):
+        return len([x for x in p.adjacent(self.size) if self[x]==Matrix.GROUNDED]) > 0
+
 
 @dataclass
 class Bot(object): # nanobot
     bid: int
     pos: Coord
     seeds: list
+    state: State
+
+    def halt(self):
+        if len(self.state.bots) > 1:
+            raise Exception("Can't halt with more than one bot")
+
+    def wait(self):
+        pass
+
+    def flip(self):
+        self.state.harmonics = not self.state.harmonics
+
+    def smove(self, diff):
+        self.pos += diff
+        self.state.energy += 2 * diff.mlen()
+
+    def lmove(self, diff1, diff2):
+        self.pos += diff
+        self.state.energy += 2 * (diff1.mlen() + 2 + diff2.mlen())
+
+    def fission(self, nd, m):
+        f = Bot(self.seeds[0], self.coord + nd, self.seeds[1:m+2])
+        self.seeds = self.seeds[m+2:]
+        self.state.bots.append(f)
+        self.state.energy += 24
+
+    def fill(self, nd):
+        p = self.coord + nd
+        if self.state.matrix[p] == 0:
+            self.state.matrix[p] = 2 if is_grounded(self.state, p) else 1
+            self.state.energy += 12
+        else:
+            self.state.energy += 6
+
 
 @dataclass
 class State(object):
@@ -54,59 +92,17 @@ class State(object):
     matrix: Matrix
     bots: list
 
+    def find_bot(self, bid):
+        for b in self.bots:
+            if b.bid == bid:
+                return b
 
-def step(S, R):
-    if S.harmonics == True:
-        S.energy += 30 * R * R * R
-    else:
-        S.energy += 3 * R * R * R
-    
-    S.energy += 20 * len(S.bots)
+    def step(self, R):
+        if self.harmonics == True:
+            self.energy += 30 * R * R * R
+        else:
+            self.energy += 3 * R * R * R
+        
+        self.energy += 20 * len(self.bots)
 
-def halt(S):
-    if len(S.bots) > 1:
-        raise Exception("Can't halt with more than one bot")
 
-def wait(S):
-    pass
-
-def flip(S):
-    S.harmonics = not S.harmonics
-
-def find_bot(S, bid):
-    for b in S.bots:
-        if b.bid == bid:
-            return b
-
-def smove(S, bid, diff):
-    b = find_bot(S, bid)
-    b.pos += diff
-    S.energy += 2 * diff.mlen()
-
-def lmove(S, bid, diff1, diff2):
-    b = find_bot(S, bid)
-    b.pos += diff
-    S.energy += 2 * (diff1.mlen() + 2 + diff2.mlen())
-
-def fission(S, bid, nd, m):
-    b = find_bot(s, bid)
-    f = Bot(b.seeds[0], b.coord + nd, b.seeds[1:m+2])
-    b.seeds = b.seeds[m+2:]
-    S.bots.append(f)
-    S.energy += 24
-
-def is_grounded(S, p):
-    return len([x for x in p.adjacent(S.matrix.size) if S.matrix[x]==2]) > 0
-
-def fill(S, bid, nd):
-    p = bid.coord + nd
-    if S.matrix[p] == 0:
-        S.matrix[p] = 2 if is_grounded(S, p) else 1
-        S.energy += 12
-    else:
-        S.energy += 6
-
-def fusion(S, prim, sec):
-    S.bots = [b for b in S.bots if b.bid!=sec.bid]
-    prim.seeds = prim.seeds + sec.seeds
-    S.energy -= 24
