@@ -23,11 +23,11 @@ class LMove( mrc.Block ):
     sld1i = mrc.Bits( 0x00, 0b0000000000001111, size=2 )
 
 class FusionP( mrc.Block ):
-    const = mrc.Const( mrc.Bits( 0x00, 0b00000111 ), 0b0111 )
+    const = mrc.Const( mrc.Bits( 0x00, 0b00000111 ), 0b111 )
     nd = mrc.Bits( 0x00, 0b11111000 )
 
 class FusionS( mrc.Block ):
-    const = mrc.Const( mrc.Bits( 0x00, 0b00000111 ), 0b0111 )
+    const = mrc.Const( mrc.Bits( 0x00, 0b00000111 ), 0b110 )
     nd = mrc.Bits( 0x00, 0b11111000 )
 
 class Fission( mrc.Block ):
