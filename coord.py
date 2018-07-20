@@ -12,6 +12,16 @@ class Coord:
     def __repr__(self):
         return astuple(self).__repr__()
 
+    def adjacent_coords(self):
+        adjs = [
+            Diff(1, 0, 0),
+            Diff(-1, 0, 0),
+            Diff(0, 1, 0),
+            Diff(0, -1, 0),
+            Diff(0, 0, 1),
+            Diff(0, 0, -1),
+        ]
+        return [self.add(d) for d in adjs]
 
 # note: don't construct Diff objects directly; use diff() func to get correct subclass
 def diff(dx, dy, dz):
