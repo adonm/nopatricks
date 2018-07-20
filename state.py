@@ -24,6 +24,15 @@ class Matrix(object):
         for byte in bytedata[1:]:
             self.state.extend( to_uint64_be( unpack_bits( byte ) ) )
 
+    def calc_grounded(self):
+        for x in range(0, self.size - 1):
+            for z in range(0, self.size - 1):
+                if self[Coord(x,0,z)] == 1:
+                    self[Coord(x,0,z)] = 2
+                    for c in Coord(x,0,z).adjacent(self.size):
+                        if self[c] == 1:
+                            self[c] = 2
+
 @dataclass
 class Bot(object): # nanobot
     bid: int
