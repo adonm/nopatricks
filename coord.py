@@ -81,18 +81,14 @@ class ShortDiff(LinearDiff):
     def __init__(self, dx, dy, dz):
         if mlen(dx, dy, dz) > 5:
             raise ValueError(f"invalid sld: <{dx}, {dy}, {dz}>")
-        self.dx = dx
-        self.dy = dy
-        self.dz = dz
+        super().__init__(dx, dy, dz)
 
 # LongDiff is a linear coordinate difference with 5 < mlen <= 15
 class LongDiff(LinearDiff):
     def __init__(self, dx, dy ,dz):
         if mlen(dx, dy, dz) > 15:
             raise ValueError(f"invalid lld: <{dx}, {dy}, {dz}>")
-        self.dx = dx
-        self.dy = dy
-        self.dz = dz
+        super().__init__(dx, dy, dz)
 
 # NearDiff is a coordinate difference with one or two axes having 1 or -1 and the other 0
 class NearDiff(Diff):
