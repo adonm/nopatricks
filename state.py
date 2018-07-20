@@ -90,7 +90,7 @@ def lmove(S, bid, diff1, diff2):
 
 def fission(S, bid, nd, m):
     b = find_bot(s, bid)
-    f = Bot(b.seeds[0], b.coord + nd, b.seeds[1:m+1])
+    f = Bot(b.seeds[0], b.coord + nd, b.seeds[1:m+2])
     b.seeds = b.seeds[m+2:]
     S.bots.append(f)
     S.energy += 24
