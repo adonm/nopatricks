@@ -21,7 +21,7 @@ class Coord:
             Diff(0, 0, 1),
             Diff(0, 0, -1),
         ]
-        return [self.add(d) for d in adjs]
+        return [self.__add__(d) for d in adjs]
 
 # note: don't construct Diff objects directly; use diff() func to get correct subclass
 def diff(dx, dy, dz):
