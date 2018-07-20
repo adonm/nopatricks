@@ -11,7 +11,22 @@ class Coord:
 
     def __repr__(self):
         return astuple(self).__repr__()
+    
+    def in_matrix(self, R):
+        return self.x>=0 and self.y>=0 and self.z>=0 \
+            and self.x<R and self.y<R and self.z<R
 
+def adjacent_coords(c, R):
+    diffs = [
+        Diff(1, 0, 0),
+        Diff(-1, 0, 0),
+        Diff(0, 1, 0),
+        Diff(0, -1, 0),
+        Diff(0, 0, 1),
+        Diff(0, 0, -1),
+    ]
+    adjs = [c.__add__(d) for d in diffs]
+    return [a for a in adjs if a.in_matrix(R)]
 
 # note: don't construct Diff objects directly; use diff() func to get correct subclass
 def diff(dx, dy, dz):
@@ -63,12 +78,28 @@ class LinearDiff(Diff):
 
 # ShortDiff is a linear coordinate difference with 0 < mlen <= 5
 class ShortDiff(LinearDiff):
-    pass
+    def __init__(self, dx, dy, dz):
+        if mlen(dx, dy, dz) > 5:
+            raise ValueError(f"invalid sld: <{dx}, {dy}, {dz}>")
+        self.dx = dx
+        self.dy = dy
+        self.dz = dz
 
 # LongDiff is a linear coordinate difference with 5 < mlen <= 15
 class LongDiff(LinearDiff):
-    pass
+    def __init__(self, dx, dy ,dz):
+        m = mlen(dx, dy, dz)
+        if m <= 5 or m > 15:
+            raise ValueError(f"invalid lld: <{dx}, {dy}, {dz}>")
+        self.dx = dx
+        self.dy = dy
+        self.dz = dz
 
 # NearDiff is a coordinate difference with one or two axes having 1 or -1 and the other 0
 class NearDiff(Diff):
-    pass
+    def __init__(self, dx, dy, dz):
+        if clen(dx, dy, dz) > 1 or mlen(dx, dy, dz) > 2:
+            raise ValueError(f"invalid nd: <{dx}, {dy}, {dz}>")
+        self.dx = dx
+        self.dy = dy
+        self.dz = dz

@@ -20,13 +20,31 @@ class SMove( mrc.Block ):
     def lldx( self ):
         return 0 if self.llda != 0b01 else (self.lldi - 15)
 
+    @lldx.setter
+    def lldx( self, value ):
+        assert value in range( -15, 17 )
+        self.llda = 0b01
+        self.lldi = value + 15
+
     @property
     def lldy( self ):
         return 0 if self.llda != 0b10 else (self.lldi - 15)
 
+    @lldy.setter
+    def lldy( self, value ):
+        assert value in range( -15, 17 )
+        self.llda = 0b10
+        self.lldi = value + 15
+
     @property
     def lldz( self ):
         return 0 if self.llda != 0b11 else (self.lldi - 15)
+
+    @lldz.setter
+    def lldz( self, value ):
+        assert value in range( -15, 17 )
+        self.llda = 0b11
+        self.lldi = value + 15
 
     @property
     def repr( self ):
@@ -42,27 +60,63 @@ class LMove( mrc.Block ):
 
     @property
     def sld2x( self ):
-        return 0 if self.sld2a != 0b01 else (self.sdl2i - 5)
+        return 0 if self.sld2a != 0b01 else (self.sld2i - 5)
 
+    @sld2x.setter
+    def sld2x( self, value ):
+        assert value in range( -5, 11 )
+        self.sld2a = 0b01
+        self.sld2i = value + 5
+    
     @property
     def sld2y( self ):
-        return 0 if self.sld2a != 0b10 else (self.sdl2i - 5)
+        return 0 if self.sld2a != 0b10 else (self.sld2i - 5)
+
+    @sld2y.setter
+    def sld2y( self, value ):
+        assert value in range( -5, 11 )
+        self.sld2a = 0b10
+        self.sld2i = value + 5
 
     @property
     def sld2z( self ):
-        return 0 if self.sld2a != 0b11 else (self.sdl2i - 5)
+        return 0 if self.sld2a != 0b11 else (self.sld2i - 5)
+
+    @sld2z.setter
+    def sld2z( self, value ):
+        assert value in range( -5, 11 )
+        self.sld2a = 0b11
+        self.sld2i = value + 5
 
     @property
     def sld1x( self ):
-        return 0 if self.sld1a != 0b01 else (self.sdl1i - 5)
+        return 0 if self.sld1a != 0b01 else (self.sld1i - 5)
+
+    @sld1x.setter
+    def sld1x( self, value ):
+        assert value in range( -5, 11 )
+        self.sld2a = 0b01
+        self.sld2i = value + 5
 
     @property
     def sld1y( self ):
-        return 0 if self.sld1a != 0b10 else (self.sdl1i - 5)
+        return 0 if self.sld1a != 0b10 else (self.sld1i - 5)
+
+    @sld1y.setter
+    def sld1y( self, value ):
+        assert value in range( -5, 11 )
+        self.sld2a = 0b10
+        self.sld2i = value + 5
 
     @property
     def sld1z( self ):
-        return 0 if self.sld1a != 0b11 else (self.sdl1i - 5)
+        return 0 if self.sld1a != 0b11 else (self.sld1i - 5)
+
+    @sld1z.setter
+    def sld1z( self, value ):
+        assert value in range( -5, 11 )
+        self.sld2a = 0b11
+        self.sld2i = value + 5
 
     @property
     def repr( self ):
@@ -72,15 +126,30 @@ class LMove( mrc.Block ):
 class NDBase( mrc.Block ):
     @property
     def ndx( self ):
-        return self.nd // 9
+        return (self.nd // 9)-1
+
+    @ndx.setter
+    def ndx( self, value ):
+        assert value in range( -1, 2 )
+        self.nd = (value+1)*9 + (self.ndy+1)*3 + (self.ndz+1)
 
     @property
     def ndy( self ):
-        return (self.nd % 9) // 3
+        return ((self.nd % 9) // 3)-1
+
+    @ndy.setter
+    def ndy( self, value ):
+        assert value in range( -1, 2 )
+        self.nd = (self.ndx+1)*9 + (value+1)*3 + (self.ndz+1)
 
     @property
     def ndz( self ):
-        return ((self.nd % 9) % 3)
+        return ((self.nd % 9) % 3)-1
+
+    @ndz.setter
+    def ndz( self ):
+        assert value in range( -1, 2 )
+        self.nd = (self.ndx+1)*9 + (self.ndy+1)*3 + (value+1)
 
     @property
     def repr( self ):
@@ -100,11 +169,29 @@ class Fission( NDBase ):
     nd = mrc.Bits( 0x00, 0b11111000, size=1 )
     m = mrc.UInt8( 0x01 )
 
+    @property
+    def repr( self ):
+        return 'nd: ({}, {}, {}), m: {}'.format( self.ndx, self.ndy, self.ndz, self.m )
+    
 class Fill( NDBase ):
     const = mrc.Const( mrc.Bits( 0x00, 0b00000111, size=1 ), 0b011 )
     nd = mrc.Bits( 0x00, 0b11111000, size=1 )
 
 
+TESTS = [
+    (SMove, bytes((0b00010100, 0b00011011))),
+    (SMove, bytes((0b00110100, 0b00001011))),
+    (LMove, bytes((0b10011100, 0b00001000))),
+    (FusionP, bytes((0b00111111,))),
+    (FusionS, bytes((0b10011110,))),
+    (Fission, bytes((0b01110101,0b00000101))),
+    (Fill, bytes((0b01010011,))),
+]
+
+for klass, src in TESTS:
+    obj = klass( src )
+    print( obj )
+    assert obj.export_data() == src
 
 
 a = LMove()
