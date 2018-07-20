@@ -6,7 +6,7 @@ from mrcrowbar.utils import to_uint64_be, unpack_bits
 @dataclass
 class Matrix(object):
     VOID = 0
-    FILLED = 1
+    FULL = 1
     GROUNDED = 2
     size: int = 0
     state: list = field(default_factory=list)
@@ -29,7 +29,7 @@ class Matrix(object):
 
     def ground_adjacent(self, gc):
         for c in gc.adjacent(self.size):
-            if self[c] == Matrix.FILLED:
+            if self[c] == Matrix.FULL:
                 self[c] = Matrix.GROUNDED
                 self.ground_adjacent(c)
 
@@ -37,7 +37,7 @@ class Matrix(object):
         for x in range(0, self.size - 1):
             for z in range(0, self.size - 1):
                 c = Coord(x,0,z)
-                if self[c] == Matrix.FILLED:
+                if self[c] == Matrix.FULL:
                     self[c] = Matrix.GROUNDED
                     self.ground_adjacent(c)
 
