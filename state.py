@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 from dataclasses import dataclass, astuple
 from coord import Coord
+from mrcrowbar.utils import to_uint64_be, unpack_bits
+
 
 @dataclass
 class Voxel(object):
@@ -19,8 +21,7 @@ class Matrix(object):
         bytedata = open("problemsL/LA001_tgt.mdl", 'rb').read()
         self.size = int(bytedata[0])
         for byte in bytedata[1:]:
-            for digit in "{0:08b}".format(byte):
-                self.filled_coords.append(digit)
+            self.filled_coords.extend( to_uint64_be( unpack_bits( byte ) ) )
 
 @dataclass
 class Bot(object): # nanobot
