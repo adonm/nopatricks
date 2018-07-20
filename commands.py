@@ -221,21 +221,6 @@ class Fill( NDBase ):
     nd = mrc.Bits( 0x00, 0b11111000, size=1 )
 
 
-TESTS = [
-    (SMove, bytes((0b00010100, 0b00011011))),
-    (SMove, bytes((0b00110100, 0b00001011))),
-    (LMove, bytes((0b10011100, 0b00001000))),
-    (FusionP, bytes((0b00111111,))),
-    (FusionS, bytes((0b10011110,))),
-    (Fission, bytes((0b01110101,0b00000101))),
-    (Fill, bytes((0b01010011,))),
-]
-
-for klass, src in TESTS:
-    obj = klass( src )
-    print( obj )
-    assert obj.export_data() == src
-
 
 def read_nbt( data ):
     pointer = 0
@@ -272,3 +257,12 @@ def read_nbt( data ):
             raise ValueError( 'wasn\'t expecting a {:02x} at {}'.format( data[pointer], pointer ) )
 
     return result
+
+
+def export_nbt( commands ):
+    result = bytearray()
+    for c in commands:
+        result.extend( c.export_data() )
+    return result
+
+

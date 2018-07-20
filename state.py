@@ -54,3 +54,54 @@ class State(object):
     matrix: Matrix
     bots: list
 
+
+def step(S, R):
+    if S.harmonics == True:
+        S.energy += 30 * R * R * R
+    else:
+        S.energy += 3 * R * R * R
+    
+    S.energy += 20 * len(S.bots)
+
+def halt(S):
+    if len(S.bots) > 1:
+        raise Exception("Can't halt with more than one bot")
+
+def wait(S):
+    pass
+
+def flip(S):
+    S.harmonics = not S.harmonics
+
+def find_bot(S, bid):
+    for b in S.bots:
+        if b.bid == bid:
+            return b
+
+def smove(S, bid, diff):
+    b = find_bot(S, bid)
+    b.pos += diff
+    S.energy += 2 * diff.mlen()
+
+def lmove(S, bid, diff1, diff2):
+    b = find_bot(S, bid)
+    b.pos += diff
+    S.energy += 2 * (diff1.mlen() + 2 + diff2.mlen())
+
+def fission(S, bid, nd, m):
+    b = find_bot(s, bid)
+    f = Bot(b.seeds[0], b.coord + nd, b.seeds[1:m+2])
+    b.seeds = b.seeds[m+2:]
+    S.bots.append(f)
+    S.energy += 24
+
+def is_grounded(S, p):
+    return len([x for x in p.adjacent(S.matrix.size) if S.matrix[x]==2]) > 0
+
+def fill(S, bid, nd):
+    p = bid.coord + nd
+    if S.matrix[p] == 0:
+        S.matrix[p] = 2 if is_grounded(S, p) else 1
+        S.energy += 12
+    else:
+        S.energy += 6
