@@ -88,8 +88,7 @@ class ShortDiff(LinearDiff):
 # LongDiff is a linear coordinate difference with 5 < mlen <= 15
 class LongDiff(LinearDiff):
     def __init__(self, dx, dy ,dz):
-        m = mlen(dx, dy, dz)
-        if m <= 5 or m > 15:
+        if mlen(dx, dy, dz) > 15:
             raise ValueError(f"invalid lld: <{dx}, {dy}, {dz}>")
         self.dx = dx
         self.dy = dy
