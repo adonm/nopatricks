@@ -1,4 +1,10 @@
 from dataclasses import dataclass, astuple
+from enum import Enum
+
+class Axis(Enum):
+    X = 1
+    Y = 2
+    Z = 3
 
 @dataclass
 class Coord:
@@ -8,6 +14,12 @@ class Coord:
 
     def __add__(self, diff):
         return Coord(self.x + diff.dx, self.y + diff.dy, self.z + diff.dz)
+
+    def __sub__(self, other):
+        if isinstance(other, Coord):
+            return diff(self.x - other.x, self.y - other.y, self.z - other.z)
+        elif isinstance(other, Diff):
+            return self + -other
 
     def __repr__(self):
         return astuple(self).__repr__()
@@ -51,11 +63,22 @@ def diff(dx, dy, dz):
             return ShortDiff(dx, dy, dz)
         elif m <= 15:
             return LongDiff(dx, dy, dz)
+        return LinearDiff(dx, dy, dz)
     return Diff(dx, dy, dz)
 
 
 def is_lcd(dx, dy, dz):
-    return int(dx!=0) + int(dy!=0) + int(dz!=0) == 1
+    idx = int(dx!=0)
+    idy = int(dy!=0)
+    idz = int(dz!=0)
+    if idx + idy + idz == 1:
+        if idx == 1:
+            return Axis.X
+        elif idy == 1:
+            return Axis.Y
+        else: # idz == 1
+            return Axis.Z
+    return None
 
 def mlen(dx, dy, dz):
     return abs(dx) + abs(dy) + abs(dz)
@@ -81,12 +104,16 @@ class Diff:
 
 # a linear coordinate difference has exactly one non-zero component
 class LinearDiff(Diff):
+    axis: Axis
+
     def __init__(self, dx, dy, dz):
-        if int(dx!=0) + int(dy!=0) + int(dz!=0) != 1:
+        self.axis = is_lcd(dx, dy, dz)
+        if self.axis is None:
             raise ValueError(f"invalid lcd: <{dx}, {dy}, {dz}>")
-        self.dx = dx
-        self.dy = dy
-        self.dz = dz
+        super().__init__(dx, dy, dz)
+
+    def __neg__(self):
+        return LinearDiff(-self.dx, -self.dy, -self.dz)
 
 # ShortDiff is a linear coordinate difference with 0 < mlen <= 5
 class ShortDiff(LinearDiff):
@@ -95,12 +122,18 @@ class ShortDiff(LinearDiff):
             raise ValueError(f"invalid sld: <{dx}, {dy}, {dz}>")
         super().__init__(dx, dy, dz)
 
+    def __neg__(self):
+        return ShortDiff(-self.dx, -self.dy, -self.dz)
+
 # LongDiff is a linear coordinate difference with 5 < mlen <= 15
 class LongDiff(LinearDiff):
     def __init__(self, dx, dy ,dz):
         if mlen(dx, dy, dz) > 15:
             raise ValueError(f"invalid lld: <{dx}, {dy}, {dz}>")
         super().__init__(dx, dy, dz)
+
+    def __neg__(self):
+        return LongDiff(-self.dx, -self.dy ,-self.dz)
 
 # NearDiff is a coordinate difference with one or two axes having 1 or -1 and the other 0
 class NearDiff(Diff):
@@ -110,3 +143,30 @@ class NearDiff(Diff):
         self.dx = dx
         self.dy = dy
         self.dz = dz
+
+    def __neg__(self):
+        return NearDiff(-self.dx, -self.dy, -self.dz)
+
+@dataclass
+class Line:
+    c1: Coord
+    c2: Coord
+    axis: Axis
+
+    def __init__(self, c1, c2):
+        diff = c1 - c2
+        if not isinstance(diff, LinearDiff):
+            raise ValueError(f"invalid line: [{c1}, {c2}]")
+        self.c1 = c1
+        self.c2 = c2
+        self.axis = diff.axis
+
+    def __repr__(self):
+        return f"[{self.c1}, {self.c2}]"
+
+    def contains(self, coord):
+        def within(val, v1, v2):
+            return (min(v1, v2) <= val and val <= max(v1, v2))
+
+        return within(coord.x, self.c1.x, self.c2.x) and within(coord.y, self.c1.y, self.c2.y) and within(coord.z, self.c1.z, self.c2.z)
+
