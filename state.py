@@ -2,6 +2,7 @@
 from dataclasses import dataclass, astuple, field
 from coord import Coord
 from mrcrowbar.utils import to_uint64_be, unpack_bits
+import commands
 
 @dataclass
 class Matrix(object):
@@ -54,6 +55,7 @@ class State(object):
     harmonics: bool # True == High, False == Low
     matrix: Matrix
     bots: list
+    commands: list
 
     def find_bot(self, bid):
         for b in self.bots:
@@ -79,26 +81,38 @@ class Bot(object): # nanobot
     def halt(self):
         if len(self.state.bots) > 1:
             raise Exception("Can't halt with more than one bot")
+        self.state.commands.append( commands.Halt() )
 
     def wait(self):
+        self.state.commands.append( commands.Wait() )
         pass
 
     def flip(self):
         self.state.harmonics = not self.state.harmonics
+        self.state.commands.append( commands.Flip() )
 
     def smove(self, diff):
         self.pos += diff
         self.state.energy += 2 * diff.mlen()
+        self.state.commands.append( commands.SMove().set_lld( diff.dx, diff.dy, diff.dz ) )
 
     def lmove(self, diff1, diff2):
         self.pos += diff
         self.state.energy += 2 * (diff1.mlen() + 2 + diff2.mlen())
+        self.state.commands.append( commands.LMove().set_sld1( diff1.dx, diff1.dy, diff1.dz ).set_sld2( diff2.dx, diff2.dy, diff2.dz ) )
 
     def fission(self, nd, m):
         f = Bot(self.seeds[0], self.coord + nd, self.seeds[1:m+2])
         self.seeds = self.seeds[m+2:]
         self.state.bots.append(f)
         self.state.energy += 24
+        self.state.commands.append( commands.Fission().set_nd( nd.dx, nd.dy, nd.dz ).set_m( m ) )
+
+    def fusionp(self, nd):
+        self.state.commands.append( commands.FusionP().set_nd( nd.dx, nd.dy, nd.dz ) )
+
+    def fusions(self, nd):
+        self.state.commands.append( commands.FusionS().set_nd( nd.dx, nd.dy, nd.dz ) )
 
     def fill(self, nd):
         p = self.coord + nd
@@ -107,4 +121,5 @@ class Bot(object): # nanobot
             self.state.energy += 12
         else:
             self.state.energy += 6
+        self.state.commands.append( commands.Fill().set_nd( nd.dx, nd.dy, nd.dz ) )
 
