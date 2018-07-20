@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
-from dataclasses import dataclass, astuple
+from dataclasses import dataclass, astuple, field
 from coord import Coord
 from mrcrowbar.utils import to_uint64_be, unpack_bits
 
 @dataclass
 class Matrix(object):
-    size: int
-    state: list # 0 = empty, 1 = filled, 2 = filled and grounded
+    size: int = 0
+    state: list = field(default_factory=list)
+    # 0 = empty, 1 = filled, 2 = filled and grounded
 
     def coord_index(self, coord):
         return coord.x * self.size * self.size + coord.y * self.size + coord.z
