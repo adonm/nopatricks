@@ -11,11 +11,11 @@ class Matrix(object):
     def coord_index(self, coord):
         return coord.x * self.size * self.size + coord.y * self.size + coord.z
 
-    def get_state(self, coord):
-        return self.state[self.coord_index(coord)]
+    def __getitem__(self, key):
+        return self.state[self.coord_index(key)]
 
-    def set_state(self, coord, value):
-        self.state[self.coord_index(coord)] = value
+    def __setitem__(self, key, value):
+        self.state[self.coord_index(key)] = value
 
     def load(self, filename="problemsL/LA001_tgt.mdl"):
         bytedata = open(filename, 'rb').read()
