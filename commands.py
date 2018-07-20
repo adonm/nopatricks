@@ -194,6 +194,38 @@ for klass, src in TESTS:
     assert obj.export_data() == src
 
 
-a = LMove()
-a.sld2a = 2
-print(a.export_data())
+def read_nbt( data ):
+    pointer = 0
+    result = []
+    while pointer < len( data ):
+        if data[pointer] == 0xff:
+            result.append( Halt() )
+            pointer += 1
+        elif data[pointer] == 0xfe:
+            result.append( Wait() )
+            pointer += 1
+        elif data[pointer] == 0xfd:
+            result.append( Flip() )
+            pointer += 1
+        elif data[pointer] & 0b1111 == 0b0100:
+            result.append( SMove( data[pointer:] ) )
+            pointer += 2
+        elif data[pointer] & 0b1111 == 0b1100:
+            result.append( LMove( data[pointer:] ) )
+            pointer += 2
+        elif data[pointer] & 0b111 == 0b111:
+            result.append( FusionP( data[pointer:] ) )
+            pointer += 1
+        elif data[pointer] & 0b111 == 0b110:
+            result.append( FusionS( data[pointer:] ) )
+            pointer += 1
+        elif data[pointer] & 0b111 == 0b101:
+            result.append( Fission( data[pointer:] ) )
+            pointer += 2
+        elif data[pointer] & 0b111 == 0b011:
+            result.append( Fill( data[pointer:] ) )
+            pointer += 1
+        else:
+            raise ValueError( 'wasn\'t expecting a {:02x} at {}'.format( data[pointer], pointer ) )
+
+    return result
