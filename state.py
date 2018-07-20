@@ -49,6 +49,27 @@ class Matrix(object):
 
 
 @dataclass
+class State(object):
+    energy: int
+    harmonics: bool # True == High, False == Low
+    matrix: Matrix
+    bots: list
+
+    def find_bot(self, bid):
+        for b in self.bots:
+            if b.bid == bid:
+                return b
+
+    def step(self, R):
+        if self.harmonics == True:
+            self.energy += 30 * R * R * R
+        else:
+            self.energy += 3 * R * R * R
+        
+        self.energy += 20 * len(self.bots)
+
+
+@dataclass
 class Bot(object): # nanobot
     bid: int
     pos: Coord
@@ -86,26 +107,4 @@ class Bot(object): # nanobot
             self.state.energy += 12
         else:
             self.state.energy += 6
-
-
-@dataclass
-class State(object):
-    energy: int
-    harmonics: bool # True == High, False == Low
-    matrix: Matrix
-    bots: list
-
-    def find_bot(self, bid):
-        for b in self.bots:
-            if b.bid == bid:
-                return b
-
-    def step(self, R):
-        if self.harmonics == True:
-            self.energy += 30 * R * R * R
-        else:
-            self.energy += 3 * R * R * R
-        
-        self.energy += 20 * len(self.bots)
-
 
