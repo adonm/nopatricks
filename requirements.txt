@@ -1,2 +1,2 @@
 mrcrowbar==0.5.1
-attrs==18.1.0
+dataclasses==0.6

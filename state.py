@@ -1,30 +1,22 @@
 #!/usr/bin/env python3
-import attr
+from dataclasses import dataclass, astuple
+from coord import Coord
 
-@attr.s
+@dataclass
 class Matrix(object):
-    pass
+    size: int
+    coords: list
 
-@attr.s
-class Coord(object):
-    x = attr.ib(default=0)
-    y = attr.ib(default=0)
-    z = attr.ib(default=0)
-
-@attr.s
+@dataclass
 class Bot(object): # nanobot
-    bid = attr.ib()
-    pos = attr.ib(factory=Coord)
-    seeds = attr.ib(factory=list)
+    bid: int
+    pos: Coord
+    seeds: list
 
-@attr.s
+@dataclass
 class State(object):
-    energy = attr.ib(default=0)
-    harmonics = attr.ib(default=False) # True == High, False == Low
-    matrix = attr.ib(factory=Matrix)
-    bots = attr.ib(factory=list)
-
-
-
-
+    energy: int
+    harmonics: bool # True == High, False == Low
+    matrix: Matrix
+    bots: list
 
