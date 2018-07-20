@@ -28,12 +28,15 @@ class Matrix(object):
             self.state.extend( to_uint64_be( unpack_bits( byte ) ) )
 
     def ground_adjacent(self, gc):
-        for c in gc.adjacent(self.size):
-            if self[c] == Matrix.FULL:
-                self[c] = Matrix.GROUNDED
-                self.ground_adjacent(c)
-
+        stack = [gc]
+        while len(stack) > 0:
+            g = stack.pop()
+            for v in [x for x in g.adjacent(self.size) if self[x] == Matrix.FILLED]:
+                self[v] = Matrix.GROUNDED
+                stack.push(v)
+        
     def calc_grounded(self):
+        stack = []
         for x in range(0, self.size - 1):
             for z in range(0, self.size - 1):
                 c = Coord(x,0,z)
