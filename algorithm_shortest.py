@@ -14,7 +14,8 @@ def shortest_path_algo(st):
     minPt = 0
 
     while not st.is_model_finished():
-        pt = st.matrix.to_fill
+        pt = st.matrix.fill_next(bot.pos + DOWN)
+        print(pt)
         for a in pt.adjacent(st.R):
             # print(a)
             path = shortest_path(st, st.bots[0], a)

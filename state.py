@@ -142,9 +142,13 @@ class Matrix(Mapping):
     def would_be_grounded(self, p):
         return p.y == 0 or len([x for x in p.adjacent(self.size) if self[x].is_grounded()]) > 0
 
-    @property
-    def to_fill(self): # ordered list of next coord that model wants filled that would be grounded
-        coords = [k for k in self if self[k].is_model() and self[k].is_void()]
+    def to_fill(self):
+        return [k for k in self if self[k].is_model() and self[k].is_void()]
+
+    def fill_next(self, nearc=None): # ordered list of next coord that model wants filled that would be grounded
+        coords = self.to_fill()
+        if nearc: # sort coords by distance from nearc
+            coords.sort(key=lambda c: (c-nearc).mlen())
         for c in coords:
             if self.would_be_grounded(c):
                 return c
