@@ -4,11 +4,12 @@ do
 done
 
 cd submission
-zip ../submission.zip ./LA*.nbt
+zip ../submission-`date +%s`.zip ./LA*.nbt
 cd ..
+cp submission-`date +%s`.zip submission.zip
 
 SHA=`openssl sha -sha256 submission.zip | cut -d ' ' -f 2`
-URL=https://www.dropbox.com/s/zii6lvk3qckp81g/submission.zip?dl=0
+URL=https://www.dropbox.com/s/v7lgho6gr4u3h62/submission-1532164567.zip?dl=0
 
 curl -L \
   --data-urlencode action=submit \

@@ -39,6 +39,35 @@ def convex_hull(st):
         "maxz": maxz,
     }
 
+def shortest_path(st, bot, c):
+    seen = set()
+    stack = []
+
+    seen.add(bot.pos)
+    stack.push(bot.pos)
+
+    table = {}
+
+    found = False
+    while not found:
+        p = stack.pop()
+        for n in p.adjacent():
+            if n not in seen and n.is_void():
+                table[n] = p
+                seen.add(n)
+                stack.push(n)
+                if n == c:
+                    found = True
+
+    path = []
+    x = c
+    while x != bot.pos:
+        path.push(x)
+        x = table(x)
+    
+    return reversed(path)
+    
+
 if __name__ == '__main__':
     problem = int(sys.argv[1])
     st = state.State.create(problem=problem)
