@@ -33,6 +33,9 @@ class Coord:
 
     def __repr__(self):
         return astuple(self).__repr__()
+
+    def __hash__(self):
+        return hash(astuple(self))
     
     def in_matrix(self, R):
         return self.x>=0 and self.y>=0 and self.z>=0 \
