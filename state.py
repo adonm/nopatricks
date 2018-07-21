@@ -101,6 +101,29 @@ class Matrix(object):
     def would_be_grounded(self, p):
         return len([x for x in p.adjacent(self.size) if self[x].is_grounded()]) > 0
 
+    def yplane(self, y):
+        """ Returns a view into this matrix at a constant y """
+        return MatrixPlane(self, y=y)
+
+
+class MatrixPlane:
+    def __init__(self, matrix, **kwargs):
+        self.matrix = matrix
+        if 'x' in kwargs:
+            self.keygen = lambda tup : Coord(kwargs['x'], tup[0], tup[1])
+        elif 'y' in kwargs:
+            self.keygen = lambda tup : Coord(tup[0], kwargs['y'], tup[1])
+        elif 'z' in kwargs:
+            self.keygen = lambda tup : Coord(tup[0], tup[1], kwargs['z'])
+        else:
+            raise ValueError("invalid plane")
+
+    def __getitem__(self, key):
+        return self.matrix[self.keygen(key)]
+
+    def __setitem__(self, key, value):
+        self.matrix[self.keygen(key)] = value
+
 
 @dataclass
 class State(object):
