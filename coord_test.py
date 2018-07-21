@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import unittest
 from coord import Coord, Line, Axis
 class TestCoords(unittest.TestCase):

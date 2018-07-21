@@ -75,13 +75,14 @@ class Matrix(Mapping):
 
     @staticmethod
     def _load_file(filename):
-        bytedata = open(filename, 'rb').read()
-        size = int(bytedata[0])
-        state = []
-        for byte in bytedata[1:]:
-            for bit in to_uint64_le( unpack_bits( byte ) ):
-                state.append(Voxel.empty(bit))
-        return size, state
+        with open(filename, 'rb') as fb:
+            bytedata = fb.read()
+            size = int(bytedata[0])
+            state = []
+            for byte in bytedata[1:]:
+                for bit in to_uint64_le( unpack_bits( byte ) ):
+                    state.append(Voxel.empty(bit))
+            return size, state
 
     def coord_index(self, coord):
         if not isinstance(coord, Coord):
