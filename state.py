@@ -190,13 +190,15 @@ class State(object):
     energy: int = 0
     harmonics: bool = False # True == High, False == Low
     step_id: int = 0
-    R: int = 0
+
+    @property
+    def R(self):
+        return self.matrix.size
 
     @classmethod
     def create(cls, problem=1):
         self = cls(Matrix(problem=problem))
         self.bots.append(Bot(state=self))
-        self.R = self.matrix.size
         return self
 
     def find_bot(self, bid):
