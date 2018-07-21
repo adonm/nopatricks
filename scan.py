@@ -20,6 +20,9 @@ class Area:
             self.min[i] = min(self.min[i], coord[i])
             self.max[i] = max(self.max[i], coord[i])
 
+    def closest(self, coord):
+        return min(self.points, default=None, key=lambda p: abs(p[0] - coord[0]) + abs(p[1] - coord[1]))
+
     def __repr__(self):
         return f"{len(self.points)} pt(s): {self.points}"
 
@@ -28,7 +31,7 @@ class Area:
 def scan(plane, grounded_fn, pts_limit=math.inf):
     areas = []
     for k in plane:
-        if plane[k].is_model() and grounded_fn(k) and not any([k in a.points for a in areas]):
+        if plane[k].is_void() and plane[k].is_model() and grounded_fn(k) and not any([k in a.points for a in areas]):
             area = Area(plane, len(areas) + 1, k)
             areas.append(area)
             flood_fill(plane, areas, area, k, pts_limit)
@@ -39,7 +42,7 @@ def flood_fill(plane, areas, area, start, pts_limit):
     while len(stack) > 0 and len(area.points) < pts_limit:
         k = stack.pop()
         for n in plane.adjacent(k):
-            if plane[n].is_model() and not any([n in a.points for a in areas]) and n not in stack:
+            if plane[n].is_void() and plane[n].is_model() and not any([n in a.points for a in areas]) and n not in stack:
                 area.grow(n)
                 stack.append(n)
 
