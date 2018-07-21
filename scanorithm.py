@@ -92,7 +92,7 @@ class ScanBrain:
             return True
 
         # no bots are busy; what's next?
-        print(f"filled {self.state.matrix.nfull} / {self.state.matrix.num_modelled}")
+        print(f"filled {self.state.matrix.nfull} / {self.state.matrix.nmodel}")
         if self.state.matrix.nfull == self.state.matrix.nmodel:
             if self.ready_to_halt():
                 self.state.bots[0].halt()
