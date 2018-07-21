@@ -3,10 +3,14 @@ import state
 import commands
 import coord
 
+import sys
 
 if __name__ == '__main__':
-    st = state.State(problem=1)
-    cmd = commands.read_nbt_iter( open('dfltTracesL/LA001.nbt', 'rb').read() )
+    problem = 1
+    if len( sys.argv ) > 1:
+        problem = int( sys.argv[1], 0 )
+    st = state.State(problem=problem)
+    cmd = commands.read_nbt_iter( open('dfltTracesL/LA{:03d}.nbt'.format(problem), 'rb').read() )
     
     try:
         while cmd:
