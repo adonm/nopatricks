@@ -88,6 +88,13 @@ class Matrix(Mapping):
             raise TypeError()
         return coord.x * self.size * self.size + coord.y * self.size + coord.z
 
+    def in_range(self, val):
+        if isinstance(val, int):
+            return val >= 0 and val < self.size
+        elif isinstance(val, Coord):
+            return self.in_range(val.x) and self.in_range(val.y) and self.in_range(val.z)
+        raise TypeError()
+
     def keys(self):
         # loop over y last so we ascend by default
         for y in range(self.size):
@@ -168,6 +175,10 @@ class MatrixPlane(Mapping):
     def __repr__(self):
         return("\n".join(self.asciigrid()))
 
+    def adjacent(self, key):
+        deltas = [(-1, 0), (1, 0), (0, -1), (0, 1)]
+        candidates = [(key[0] + d[0], key[1] + d[1]) for d in deltas]
+        return [n for n in candidates if self.matrix.in_range(self.keygen(n))]
 
 
 @dataclass

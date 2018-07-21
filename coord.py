@@ -25,6 +25,12 @@ class Coord:
         elif isinstance(other, Diff):
             return self + -other
 
+    def __len__(self):
+        return 3
+
+    def __getitem__(self, key):
+        return astuple(self)[key]
+
     def __repr__(self):
         return astuple(self).__repr__()
     
