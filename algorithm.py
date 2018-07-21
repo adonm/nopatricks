@@ -16,9 +16,9 @@ def back_to_base(st):
         bot.smove(DOWN)
     
 def convex_hull(st):
-    minx = R-1
+    minx = st.R-1
     maxx = 0
-    minz = R-1
+    minz = st.R-1
     maxz = 0
     for y in range(st.R):
         for x in range(st.R):
