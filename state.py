@@ -68,6 +68,9 @@ class Matrix(Mapping):
         
         self.nmodel = len([v for v in self.state if v.is_model()])
 
+    def is_valid_point(self, pt):
+        return pt.x>0 and pt.y>0 and pt.z>0 and pt.x<self.size and pt.y<self.size and pt.z<self.size
+
     @property
     def num_modelled(self):
         return len([v for v in self.state if v.is_model()])
