@@ -19,6 +19,9 @@ class Coord:
     def __add__(self, diff):
         return Coord(self.x + diff.dx, self.y + diff.dy, self.z + diff.dz)
 
+    def __multiply__(self, m):
+        return Coord(self.x * m, self.y * m, self.z * m)
+
     def __sub__(self, other):
         if isinstance(other, Coord):
             return diff(self.x - other.x, self.y - other.y, self.z - other.z)
@@ -33,6 +36,9 @@ class Coord:
 
     def __repr__(self):
         return astuple(self).__repr__()
+    
+    def __hash__(self):
+        return hash((self.x, self.y, self.z))
     
     def in_matrix(self, R):
         return self.x>=0 and self.y>=0 and self.z>=0 \
@@ -153,6 +159,9 @@ class NearDiff(Diff):
         self.dx = dx
         self.dy = dy
         self.dz = dz
+
+    def mul(self, m):
+        return NearDiff(self.dx * m, self.dy * m, self.dz * m)
 
     def __neg__(self):
         return NearDiff(-self.dx, -self.dy, -self.dz)

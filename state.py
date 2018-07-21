@@ -120,7 +120,7 @@ class Matrix(Mapping):
             g = stack.pop()
             for v in [x for x in g.adjacent(self.size) if self[x].is_full()]:
                 self[v].set_grounded()
-                ungrounded.remove(v)
+                self.ungrounded.remove(v)
                 stack.push(v)
         
     def calc_grounded(self):
@@ -190,21 +190,24 @@ class State(object):
     energy: int = 0
     harmonics: bool = False # True == High, False == Low
     trace: list = field(default_factory=list)
+    R: int = 0
 
     def __init__(self, problem=1):
         self.matrix = Matrix(problem=1)
         self.bots = [Bot(state=self)]
+        self.R = len(self.matrix)
+        self.trace = []
 
     def find_bot(self, bid):
         for b in self.bots:
             if b.bid == bid:
                 return b
 
-    def step(self, R):
+    def step(self):
         if self.harmonics == True:
-            self.energy += 30 * R * R * R
+            self.energy += 30 * self.R * self.R * self.R
         else:
-            self.energy += 3 * R * R * R
+            self.energy += 3 * self.R * self.R * self.R
         
         self.energy += 20 * len(self.bots)
 
@@ -243,7 +246,7 @@ class Bot(object): # nanobot
         self.state.trace.append( commands.LMove().set_sld1( diff1.dx, diff1.dy, diff1.dz ).set_sld2( diff2.dx, diff2.dy, diff2.dz ) )
 
     def fission(self, nd, m):
-        f = Bot(self.seeds[0], self.coord + nd, self.seeds[1:m+2])
+        f = Bot(self.seeds[0], self.pos + nd, self.seeds[1:m+2])
         self.seeds = self.seeds[m+2:]
         self.state.bots.append(f)
         self.state.energy += 24
@@ -256,14 +259,14 @@ class Bot(object): # nanobot
         self.state.trace.append( commands.FusionS().set_nd( nd.dx, nd.dy, nd.dz ) )
 
     def fill(self, nd):
-        p = self.coord + nd
+        p = self.pos + nd
         if self.state.matrix[p].is_void():
             self.state.matrix[p].set_full()
-            if would_be_grounded(self.state, p):
+            if self.state.matrix.would_be_grounded(p):
                 self.state.matrix[p].set_grounded()
                 self.state.ground_adjacent(p)
             else:
-                ungrounded.add(p)
+                self.state.matrix.ungrounded.add(p)
             
             self.state.energy += 12
         else:

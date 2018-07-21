@@ -6,8 +6,8 @@ from state import *
 class TestState(unittest.TestCase):
 
     def test_step_should_update_energy(self):
-        S = State(0, False, [], [])
-        S.step(2)
+        S = State(problem=1)
+        S.step()
         self.assertEqual(S.energy, 24)
 
     def test_basic_matrix(self):

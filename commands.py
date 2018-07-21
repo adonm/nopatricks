@@ -157,6 +157,7 @@ class LMove( mrc.Block ):
 
 
 class NDBase( mrc.Block ):
+    
     def set_nd( self, x, y, z ):
         self.ndx = x
         self.ndy = y
@@ -186,7 +187,7 @@ class NDBase( mrc.Block ):
         return ((self.nd % 9) % 3)-1
 
     @ndz.setter
-    def ndz( self ):
+    def ndz( self, value ):
         assert value in range( -1, 2 )
         self.nd = (self.ndx+1)*9 + (self.ndy+1)*3 + (value+1)
 
