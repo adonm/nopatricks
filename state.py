@@ -147,8 +147,9 @@ class Matrix(Mapping):
 
     def fill_next(self, nearc=None): # ordered list of next coord that model wants filled that would be grounded
         coords = self.to_fill()
-        if nearc: # sort coords by distance from nearc
-            coords.sort(key=lambda c: (c-nearc).mlen())
+        if nearc: # sort coords by distance from nearc on same yplane
+            coords = list(filter(lambda c: c.y == nearc.y], coords))
+            coords.sort(key=lambda c: (c-nearc).mlen() + self.size * abs(c.y - nearc.y))
         for c in coords:
             if self.would_be_grounded(c):
                 return c
