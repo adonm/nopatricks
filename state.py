@@ -277,11 +277,11 @@ class Bot(object): # nanobot
         self.state.trace.append( commands.Fission().set_nd( nd.dx, nd.dy, nd.dz ).set_m( m ) )
 
     def fusionp(self, nd):
-        self.primary_fuse_bots.append((self, pos+nd))
+        self.primary_fuse_bots.append((self, self.pos+nd))
         self.state.trace.append( commands.FusionP().set_nd( nd.dx, nd.dy, nd.dz ) )
 
     def fusions(self, nd):
-        self.secondary_fuse_bots.append((self, pos+nd))
+        self.secondary_fuse_bots.append((self, self.pos+nd))
         self.state.trace.append( commands.FusionS().set_nd( nd.dx, nd.dy, nd.dz ) )
 
     def fill(self, nd):
