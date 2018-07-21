@@ -4,6 +4,16 @@ import commands
 from coord import Coord, diff, UP, DOWN, LEFT, RIGHT, FORWARD, BACK
 import sys
 
+def back_to_base(st):
+    bot = st.bots[0]
+    while bot.pos.z != 0:
+        bot.smove(BACK)
+    while bot.pos.x != 0:
+        bot.smove(RIGHT)
+    while bot.pos.y != 0:
+        bot.smove(DOWN)
+    
+        
 
 if __name__ == '__main__':
     st = state.State.create(problem=1)
@@ -27,6 +37,8 @@ if __name__ == '__main__':
             zdir *= -1
         bot.smove(UP)
         xdir *= -1
+    
+    back_to_base(st)
         
     data = commands.export_nbt( st.trace )
     with open("test01.nbt", "wb") as file:
