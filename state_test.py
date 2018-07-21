@@ -6,9 +6,9 @@ from state import *
 class TestState(unittest.TestCase):
 
     def test_step_should_update_energy(self):
-        S = State(problem=1)
+        S = State(Matrix(size=2))
         S.step()
-        self.assertEqual(S.energy, 24)
+        self.assertEqual(S.energy, 24 + 20)
 
     def test_basic_matrix(self):
         m = Matrix(problem=1)
@@ -21,6 +21,8 @@ class TestState(unittest.TestCase):
         self.assertTrue(m[c].is_grounded())
 
         self.assertTrue(m[Coord(13, 5, 8)].is_model())
+
+
 
 if __name__ == '__main__':
     unittest.main()

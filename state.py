@@ -182,21 +182,22 @@ class MatrixPlane(Mapping):
         candidates = [(key[0] + d[0], key[1] + d[1]) for d in deltas]
         return [n for n in candidates if self.matrix.in_range(self.keygen(n))]
 
-
 @dataclass
 class State(object):
     matrix: Matrix
-    bots: list
+    bots: list = field(default_factory = list)
+    trace: list = field(default_factory = list)
     energy: int = 0
     harmonics: bool = False # True == High, False == Low
-    trace: list = field(default_factory=list)
+    step_id: int = 0
     R: int = 0
 
-    def __init__(self, problem=1):
-        self.matrix = Matrix(problem=1)
-        self.bots = [Bot(state=self)]
-        self.R = len(self.matrix)
-        self.trace = []
+    @classmethod
+    def create(cls, problem=1):
+        self = cls(Matrix(problem=problem))
+        self.bots.append(Bot(state=self))
+        self.R = self.matrix.size
+        return self
 
     def find_bot(self, bid):
         for b in self.bots:
@@ -210,6 +211,11 @@ class State(object):
             self.energy += 3 * self.R * self.R * self.R
         
         self.energy += 20 * len(self.bots)
+        self.step_id += 1
+
+
+    def __repr__(self):
+        return 'step_id: {}, len( bots ): {}, energy: {}'.format(self.step_id, len( self.bots ), self.energy)
 
 
 def default_seeds():

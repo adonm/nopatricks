@@ -36,6 +36,9 @@ class Coord:
 
     def __repr__(self):
         return astuple(self).__repr__()
+
+    def __hash__(self):
+        return hash(astuple(self))
     
     def __hash__(self):
         return hash((self.x, self.y, self.z))
