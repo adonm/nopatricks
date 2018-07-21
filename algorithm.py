@@ -29,8 +29,37 @@ def convex_hull(st):
         "maxz": maxz,
     }
 
+def next_move(st, bot, path):
+    i = 0
+    j = 1
+    while j<len(path) and (path[j] - path[i]).is_manhatten():
+        j += 1
+    j -= 1
+
+    k = j+1
+    while k<len(path) and (path[k] - path[j]).is_manhatten():
+        k += 1
+    k -= 1
+    
+    if i!=j and k!=j:
+        bot.lmove(path[j] - path[i], path[k] - path[j])
+        return k + 1
+    else: 
+        bot.smove(path[i+1] - path[i])
+        return i+2
+
 def compress(st, bot, path):
-    pass
+    i = 0
+    print(bot.pos)
+    print(path)
+    while i < len(path):
+        i = next_move(st, bot, path)
+        path = path[i:]
+        i = 0
+
+def smove_path(st, bot, path):
+    for i in range(1, len(path)):
+        bot.smove(path[i] - path[i-1])
 
 def shortest_path(st, bot, c):
     if bot.pos == c:

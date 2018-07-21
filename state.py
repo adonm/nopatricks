@@ -279,7 +279,7 @@ class Bot(object): # nanobot
         self.state.trace.append( commands.SMove().set_lld( diff.dx, diff.dy, diff.dz ) )
 
     def lmove(self, diff1, diff2):
-        self.pos += diff
+        self.pos += diff1 + diff2
         self.state.energy += 2 * (diff1.mlen() + 2 + diff2.mlen())
         self.state.trace.append( commands.LMove().set_sld1( diff1.dx, diff1.dy, diff1.dz ).set_sld2( diff2.dx, diff2.dy, diff2.dz ) )
 

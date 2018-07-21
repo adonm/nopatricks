@@ -97,6 +97,19 @@ class Diff:
     dy: int
     dz: int
 
+    def is_manhatten(self):
+        n = 0
+        if abs(self.dx)>5 or abs(self.dy)>5 or abs(self.dz)>5:
+            return False
+            
+        if self.dx != 0:
+            n+=1
+        if self.dy != 0:
+            n+=1
+        if self.dz != 0:
+            n+=1 
+        return n==1
+
     def mlen(self):
         return sum(map(abs, astuple(self)))
 
@@ -126,6 +139,9 @@ class ShortDiff(LinearDiff):
             raise ValueError(f"invalid sld: <{dx}, {dy}, {dz}>")
         super().__init__(dx, dy, dz)
 
+    def __add__(self, d):
+        return diff(self.dx + d.dx, self.dy + d.dy, self.dz + d.dz)
+
     def __neg__(self):
         return ShortDiff(-self.dx, -self.dy, -self.dz)
 
@@ -147,6 +163,9 @@ class NearDiff(Diff):
         self.dx = dx
         self.dy = dy
         self.dz = dz
+
+    def __add__(self, d):
+        return diff(self.dx + d.dx, self.dy + d.dy, self.dz + d.dz)
 
     def mul(self, m):
         return NearDiff(self.dx * m, self.dy * m, self.dz * m)
