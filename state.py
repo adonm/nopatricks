@@ -221,7 +221,11 @@ class State(object):
         for prim_bot, sec_pos in self.primary_fuse_bots:
             for i, (sec_bot, prim_pos) in enumerate(self.secondary_fuse_bots):
                 if prim_bot.pos == prim_pos and sec_bot.pos == sec_pos:
-                    self.bots.remove(self.secondary_fuse_bots.pop(i)[0])
+                    self.secondary_fuse_bots.pop(i)
+                    prim_bot.seeds.append(sec_bot.bid)
+                    prim_bot.seeds.extend(sec_bot.seeds)
+                    self.bots.remove(sec_bot)
+                    self.energy -= 24
                     break
             raise ValueError( 'missing secondary fusion match for {}'.format(prim_bot.bid) )
         if self.secondary_fuse_bots:
