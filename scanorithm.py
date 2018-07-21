@@ -2,15 +2,15 @@ import commands, coord, state
 from coord import Coord
 from scan import Area, scan
 from dataclasses import dataclass
+import sys
 
-from algorithm import shortest_path #sneaky sneaky
+from algorithm import shortest_path, next_move #sneaky sneaky
 
 def move(bot, diff):
     return move_to(bot, bot.pos + diff)
 
 def move_to(bot, dest):
-    p = shortest_path(bot.state, bot, dest)
-    return bot.smove(p[1] - p[0])
+    next_move(bot.state, bot, shortest_path(bot.state, bot, dest))
 
 
 class FillArea:
@@ -129,14 +129,16 @@ class ScanBrain:
 
 
 if __name__ == '__main__':
-    prob = 1
-    try:
-        prob = int(sys.argv[0])
-    except:
-        pass
+    def parse():
+        try:
+            return int(sys.argv[1])
+        except:
+            return 1
+
+    prob = parse()
     st = state.State.create(problem=prob)
     brain = ScanBrain(st)
-    i = 1500
+    i = 5000
     while brain.step():
         st.step()
         i -= 1
@@ -145,5 +147,15 @@ if __name__ == '__main__':
 
     print(st)
 
-    with open("test%03d.nbt" % prob, "wb") as file:
+    with open("scan%03d.nbt" % prob, "wb") as file:
         file.write(commands.export_nbt(st.trace))
+
+
+# scores (problem time/energy)
+# 1 878 / 21098000
+# 2 333 / 8001940
+# 3  437 / 10500892
+# 4 (crash; ungrounded)
+# 5 1936 / 46520988
+# 6 1411 / 33903292
+# 7 3087 / 74179928
