@@ -147,7 +147,7 @@ if __name__ == '__main__':
 
     print(st)
 
-    with open("scan%03d.nbt" % prob, "wb") as file:
+    with open("submission/LA"+str(prob).zfill(3)+".nbt", "wb") as file:
         file.write(commands.export_nbt(st.trace))
 
 
