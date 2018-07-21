@@ -1,4 +1,4 @@
-for P in {2..186}
+for P in {100..186}
 do
 	touch submission/LA$P.nbt
 done
