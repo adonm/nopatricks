@@ -39,6 +39,7 @@ if __name__ == '__main__':
         xdir *= -1
     
     back_to_base(st)
+    bot.halt()
         
     data = commands.export_nbt( st.trace )
     with open("test01.nbt", "wb") as file:
