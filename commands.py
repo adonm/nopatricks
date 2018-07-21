@@ -221,6 +221,65 @@ class Fill( NDBase ):
     const = mrc.Const( mrc.Bits( 0x00, 0b00000111, size=1 ), 0b011 )
     nd = mrc.Bits( 0x00, 0b11111000, size=1 )
 
+class Void( NDBase ):
+    const = mrc.Const( mrc.Bits( 0x00, 0b00000111, size=1 ), 0b010 )
+    nd = mrc.Bits( 0x00, 0b11111000, size=1 )
+
+
+class FDBase( NDBase ):
+    def set_fd( self, x, y, z ):
+        self.fdx = x
+        self.fdy = y
+        self.fdz = z
+        return self
+
+    @property
+    def fdx( self ):
+        return self.fdx_raw - 30
+
+    @fdx.setter
+    def fdx( self, value ):
+        assert value in range( -30, 31 )
+        self.fdx_raw = value + 30
+
+    @property
+    def fdy( self ):
+        return self.fdx_raw - 30
+
+    @fdy.setter
+    def fdy( self, value ):
+        assert value in range( -30, 31 )
+        self.fdy_raw = value + 30
+
+    @property
+    def fdz( self ):
+        return self.fdz_raw - 30
+
+    @fdz.setter
+    def fdz( self, value ):
+        assert value in range( -30, 31 )
+        self.fdz_raw = value + 30
+
+    @property
+    def repr( self ):
+        return 'nd: ({}, {}, {}), fd: ({}, {}, {})'.format( self.ndx, self.ndy, self.ndz, self.fdx, self.fdy, self.fdz )
+
+
+class GFill( FDBase ):
+    const = mrc.Const( mrc.Bits( 0x00, 0b00000111, size=1 ), 0b001 )
+    nd = mrc.Bits( 0x00, 0b11111000, size=1 )
+    fdx_raw = mrc.UInt8( 0x01 )
+    fdy_raw = mrc.UInt8( 0x02 )
+    fdz_raw = mrc.UInt8( 0x03 )
+
+
+class GVoid( FDBase ):
+    const = mrc.Const( mrc.Bits( 0x00, 0b00000111, size=1 ), 0b000 )
+    nd = mrc.Bits( 0x00, 0b11111000, size=1 )
+    fdx_raw = mrc.UInt8( 0x01 )
+    fdy_raw = mrc.UInt8( 0x02 )
+    fdz_raw = mrc.UInt8( 0x03 )
+
 
 def read_nbt( data ):
     return [x for x in read_nbt_iter( data )]

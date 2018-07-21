@@ -370,6 +370,22 @@ class Bot(object): # nanobot
         if self.state.enable_trace:
             self.state.trace.append( commands.Fill().set_nd( nd.dx, nd.dy, nd.dz ) )
 
+    def void(self, nd):
+        print('FIXME: Bot.void()')
+        if self.state.enable_trace:
+            self.state.trace.append( commands.Void().set_nd( nd.dx, nd.dy, nd.dz ) )
+
+    def gfill(self, nd, fd):
+        print('FIXME: Bot.gfill()')
+        if self.state.enable_trace:
+            self.state.trace.append( commands.GFill().set_nd( nd.dx, nd.dy, nd.dz ).set_fd( fd.dx, fd.dy, fd.dz ) )
+
+    def gvoid(self, nd, fd):
+        print('FIXME: Bot.gvoid()')
+        if self.state.enable_trace:
+            self.state.trace.append( commands.GVoid().set_nd( nd.dx, nd.dy, nd.dz ).set_fd( fd.dx, fd.dy, fd.dz ) )
+
+
     def __repr__(self):
         output = self.state.matrix.yplane(self.pos.y).asciigrid()
         output.reverse()
