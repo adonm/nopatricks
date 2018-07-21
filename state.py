@@ -68,6 +68,18 @@ class Matrix(Mapping):
         else:
             self.size, self.state = Matrix._load_prob(kwargs.get('problem', 1))
 
+    @property
+    def num_grounded(self):
+        return len([v for v in self.state if v.is_grounded()])
+
+    @property
+    def num_full(self):
+        return len([v for v in self.state if v.is_full()])
+
+    @property
+    def num_modelled(self):
+        return len([v for v in self.state if v.is_model()])
+
     @staticmethod
     def _load_prob(num):
         return Matrix._load_file("problemsL/LA%03d_tgt.mdl" % num)
@@ -139,6 +151,9 @@ class Matrix(Mapping):
     def yplane(self, y):
         """ Returns a view into this matrix at a constant y """
         return MatrixPlane(self, y=y)
+
+    def __repr__(self):
+        return "size: {}, model/full/grounded: {}/{}/{}".format(self.size, self.num_modelled, self.num_full, self.num_grounded)
 
 
 class MatrixPlane(Mapping):
@@ -238,7 +253,7 @@ class State(object):
 
 
     def __repr__(self):
-        return 'step_id: {}, len( bots ): {}, energy: {}'.format(self.step_id, len( self.bots ), self.energy)
+        return 'step_id: {}, bots: {}, energy: {}, matrix: {}'.format(self.step_id, len( self.bots ), self.energy, repr(self.matrix))
 
 
 def default_seeds():
