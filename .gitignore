@@ -1,5 +1,6 @@
 submission.zip
 test*.nbt
+test/
 submission/
 .vscode/
 # Byte-compiled / optimized / DLL files
