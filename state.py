@@ -57,6 +57,7 @@ class Matrix(Mapping):
         self.ungrounded = set()
         self.ngrounded = 0
         self.nfull = 0
+        self.model_pts = None
         if 'size' in kwargs:
             self.size = kwargs['size']
             self.state = [Voxel.empty() for i in range(self.size ** 3)]
@@ -142,11 +143,22 @@ class Matrix(Mapping):
     def would_be_grounded(self, p):
         return p.y == 0 or len([x for x in p.adjacent(self.size) if self[x].is_grounded()]) > 0
 
-    @property
-    def to_fill(self): # ordered list of next coord that model wants filled that would be grounded
-        coords = [k for k in self if self[k].is_model() and self[k].is_void()]
+    def to_fill(self):
+        if self.model_pts is None:
+            self.model_pts = [k for k in self if self[k].is_model()]
+        return [x for x in self.model_pts if self[x].is_void()]
+        
+    def fill_next(self, nearc=None): # ordered list of next coord that model wants filled that would be grounded
+        # print("fill")
+        coords = self.to_fill()
+        # print("tofill")
+        if nearc: # sort coords by distance from nearc on same yplane
+            # coords = list(filter(lambda c: c.y == nearc.y, coords))
+            coords.sort(key=lambda c: (c-nearc).mlen() + self.size * abs(c.y - nearc.y))
+        # print("sorted")
         for c in coords:
             if self.would_be_grounded(c):
+                # print("found")
                 return c
 
     def yplane(self, y):
