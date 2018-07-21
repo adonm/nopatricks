@@ -1,7 +1,6 @@
-#!/bin/bash
-for P in {1..186}
+for P in {100..186}
 do
-	python3.6 algorithm.py $P
+	touch submission/LA$P.nbt
 done
 
 cd submission
@@ -17,3 +16,4 @@ curl -L \
   --data-urlencode submissionURL=$URL \
   --data-urlencode submissionSHA=$SHA \
   https://script.google.com/macros/s/AKfycbzQ7Etsj7NXCN5thGthCvApancl5vni5SFsb1UoKgZQwTzXlrH7/exec
+
