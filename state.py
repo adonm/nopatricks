@@ -304,6 +304,7 @@ class Bot(object): # nanobot
 
     def fission(self, nd, m):
         f = Bot(self.state, self.seeds[0], self.pos + nd, self.seeds[1:m+2])
+        print(f"FISSION bot {f.bid}")
         self.seeds = self.seeds[m+2:]
         self.state.bots_to_add.append(f)
         self.state.energy += 24

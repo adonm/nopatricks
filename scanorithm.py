@@ -3,6 +3,7 @@ from coord import Coord
 from scan import Area, scan
 from dataclasses import dataclass
 import sys
+import math
 
 from algorithm import shortest_path, next_move #sneaky sneaky
 
@@ -38,7 +39,11 @@ class FillArea:
 @dataclass
 class SpawnBot:
     towards: Coord
-    retainSeeds: float # fraction
+    retainSeeds: float = 0.5 # fraction
+
+    def step(self, brain, bot):
+        # TODO ensure target space is actually empty
+        bot.fission(coord.NearDiff(0, brain.dir, 0), math.ceil(len(bot.seeds) * self.retainSeeds))
 
 
 @dataclass
@@ -67,7 +72,7 @@ class ScanBrain:
 
     def plan(self):
         assert self.num_jobs() == 0
-        pts_limit = 999999 #self.state.R * self.state.R / 20.0 / 2.0
+        pts_limit = self.state.R * self.state.R / 20.0 / 1.5
         plane = self.state.matrix.yplane(self.y)
         areas = scan(plane, self.prev_ground, pts_limit)
         print(f"Found {len(areas)} area(s) @ y={self.y}\n" + "\n".join(map(repr, areas)))
@@ -75,12 +80,10 @@ class ScanBrain:
             self.dir = -self.dir
         #if len(areas) > 20:
         #    raise Exception("TODO merge areas together")
-        #TODO fission if more bots required
-        id = 1
-        while len(self.active) < 20 and len(areas) > 0:
-            # TODO assign jobs to nearest bots instead of sequentially
-            self.active[id] = FillArea(areas.pop())
-            id += 1
+        if len(areas) > len(self.state.bots):
+            parent = self.state.bots[0] # TODO find bot with lowest seeds[0]?
+            self.active[parent.bid] = SpawnBot(areas[-1].anchor, 0.1)
+        #TODO assign pending tasks to closest idle bots
         self.pending = list(map(FillArea, areas))
 
 
@@ -124,6 +127,9 @@ class ScanBrain:
                 if not more_work:
                     del self.active[id]
                 return more_work
+        if len(self.pending) > 0:
+            self.active[bot.bid] = self.pending.pop()
+            return self.step_bot(bot) #recurse
         bot.wait()
         return False
 
