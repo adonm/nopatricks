@@ -173,14 +173,18 @@ if __name__ == '__main__':
     problem = int(sys.argv[1])
     st = state.State.create(problem=problem)
     old_algo(st)
+    if st.harmonics is True:
+        st.bots[0].flip()
     back_to_base(st, st.bots[0])
     st.bots[0].halt()
     st.step()
         
     print( st )
+    filename = "submission/LA"+str(problem).zfill(3)+".nbt"
+    sys.stderr.write('{}: {}\n'.format(filename, st.score) )
     print( 'energy: {}, default: {}, score: {:0.3f}/{:0.3f}'.format( st.energy, st.default_energy, st.score, st.score_max ) )
     data = commands.export_nbt( st.trace )
-    with open("submission/LA"+str(problem).zfill(3)+".nbt", "wb") as file:
+    with open(filename, "wb") as file:
         file.write(data)
 
     
