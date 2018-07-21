@@ -12,9 +12,13 @@ def shortest_path_algo(st):
     
     pts = list(st.matrix.keys())
     minPt = 0
+    zcoords = []
 
     while not st.is_model_finished():
-        pt = st.matrix.fill_next(bot.pos + DOWN)
+        if len(zcoords) == 0:
+            zcoords = st.matrix.fill_next(bot.pos + DOWN)
+            zcoords.reverse()
+        pt = zcoords.pop()
         for a in pt.adjacent(st.R):
             print(a)
             if st.matrix[a].is_void():

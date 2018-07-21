@@ -148,17 +148,18 @@ class Matrix(Mapping):
         return [x for x in self.model_pts if self[x].is_void()]
         
     def fill_next(self, nearc=None): # ordered list of next coord that model wants filled that would be grounded
-        # print("fill")
         coords = self.to_fill()
-        # print("tofill")
-        if nearc: # sort coords by distance from nearc on same yplane
-            coords = list(filter(lambda c: c.y == nearc.y, coords))
+        if nearc: # sort coords by distance from nearc
             coords.sort(key=lambda c: (c-nearc).mlen() + self.size * abs(c.y - nearc.y))
-        # print("sorted")
+        x, y = None, None
+        zcoords = []
         for c in coords:
+            if x and c.x != x and c.y != y:
+                continue
             if self.would_be_grounded(c):
-                # print("found")
-                return c
+                x, y = c.x, c.y
+                zcoords.append(c)
+        return zcoords
 
     def yplane(self, y):
         """ Returns a view into this matrix at a constant y """
