@@ -62,6 +62,23 @@ def back_to_base(st):
     for i in range(1, len(path)):
         bot.smove(path[i] - path[i-1])
     
+def skip(bot, st, diff):
+    jump = 1
+    while jump < 16:
+        belowp = bot.pos + DOWN
+        for i in range(jump):
+            belowp = belowp + diff
+        below = st.matrix[belowp]
+        if below.is_model():
+            break
+        if belowp.z > st.R-2 or belowp.x > st.R-2:
+            break
+        if belowp.z < 1 or belowp.x < 1:
+            break
+        jump += 1
+    bot.smove(belowp - (bot.pos + DOWN))
+    return below, belowp
+
 if __name__ == '__main__':
     problem = int(sys.argv[1])
     st = state.State.create(problem=problem)
@@ -73,9 +90,7 @@ if __name__ == '__main__':
     while bot.pos.y < st.R-1 and not st.is_model_finished():
         while (xdir == 1 and bot.pos.x <= bounds["maxx"]) or (xdir == -1 and bot.pos.x >= bounds["minx"]):
             while (zdir == 1 and bot.pos.z <= bounds["maxz"]) or (zdir==-1 and bot.pos.z >= bounds["minz"]):
-                bot.smove(FORWARD.mul(zdir))
-                below = st.matrix[bot.pos + DOWN]
-                belowp = bot.pos + DOWN
+                below, belowp = skip(bot, st, FORWARD.mul(zdir))
                 if below.is_model() and below.is_void():
                     if not st.matrix.would_be_grounded(belowp) and st.harmonics == False:
                         bot.flip()
