@@ -32,7 +32,6 @@ def flood_fill(plane, areas, area, start):
     stack = [start]
     while len(stack) > 0:
         k = stack.pop()
-        plane[k].set_area_id(area.id)
         for n in plane.adjacent(k):
             if plane[n].is_model() and not any([n in a.points for a in areas]) and n not in stack:
                 area.grow(n)
