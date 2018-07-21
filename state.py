@@ -2,6 +2,7 @@
 from dataclasses import dataclass, astuple, field
 from coord import Coord
 from mrcrowbar.utils import to_uint64_le, unpack_bits
+from collections.abc import Mapping
 import commands
 
 class Voxel:
@@ -53,7 +54,7 @@ class Voxel:
         return c1 + c2
 
 
-class Matrix(object):
+class Matrix(Mapping):
     """ Matrix(size=R) initialises an empty matrix
         Matrix(problem=N) loads problem N
         Matrix(filename="foo.mdl") loads model file"""
@@ -83,7 +84,22 @@ class Matrix(object):
         return size, state
 
     def coord_index(self, coord):
+        if not isinstance(coord, Coord):
+            raise TypeError()
         return coord.x * self.size * self.size + coord.y * self.size + coord.z
+
+    def keys(self):
+        # loop over y last so we ascend by default
+        for y in range(self.size):
+            for x in range(self.size):
+                for z in range(self.size):
+                    yield Coord(x, y, z)
+
+    def __iter__(self):
+        return self.keys()
+
+    def __len__(self):
+        return self.size ** 3
 
     def __getitem__(self, key):
         return self.state[self.coord_index(key)]
@@ -117,7 +133,7 @@ class Matrix(object):
         return MatrixPlane(self, y=y)
 
 
-class MatrixPlane:
+class MatrixPlane(Mapping):
     def __init__(self, matrix, **kwargs):
         self.matrix = matrix
         if 'x' in kwargs:
@@ -128,6 +144,17 @@ class MatrixPlane:
             self.keygen = lambda tup : Coord(tup[0], tup[1], kwargs['z'])
         else:
             raise ValueError("invalid plane")
+
+    def keys(self):
+        for u in range(self.matrix.size):
+            for v in range(self.matrix.size):
+                yield (u, v)
+
+    def __iter__(self):
+        return self.keys()
+
+    def __len__(self):
+        return self.matrix.size ** 2
 
     def __getitem__(self, key):
         return self.matrix[self.keygen(key)]

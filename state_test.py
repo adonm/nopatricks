@@ -19,5 +19,7 @@ class TestState(unittest.TestCase):
         m.yplane(9)[8,10].set_grounded()
         self.assertTrue(m[c].is_grounded())
 
+        self.assertTrue(m[Coord(13, 5, 8)].is_model())
+
 if __name__ == '__main__':
     unittest.main()
