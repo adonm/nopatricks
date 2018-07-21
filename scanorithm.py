@@ -3,14 +3,14 @@ from coord import Coord
 from scan import Area, scan
 from dataclasses import dataclass
 
+from algorithm import shortest_path #sneaky sneaky
 
 def move(bot, diff):
-    if diff.dy != 0:
-        return bot.smove(coord.LongDiff(0, max(-15, min(diff.dy, 15)), 0))
-    elif diff.dx != 0:
-        return bot.smove(coord.LongDiff(max(-15, min(diff.dx, 15)), 0, 0))
-    else:
-        return bot.smove(coord.LongDiff(0, 0, max(-15, min(diff.dz, 15))))
+    return move_to(bot, bot.pos + diff)
+
+def move_to(bot, dest):
+    p = shortest_path(bot.state, bot, dest)
+    return bot.smove(p[1] - p[0])
 
 
 class FillArea:
@@ -44,7 +44,10 @@ class SpawnBot:
 @dataclass
 class HeadHome:
     def step(self, brain, bot):
-        return False
+        if bot.pos == Coord(0, 0, 0):
+            return False
+        move_to(bot, Coord(0, 0, 0))
+        return True
 
 
 class ScanBrain:
@@ -92,6 +95,7 @@ class ScanBrain:
         print(f"filled {self.state.matrix.nfull} / {self.state.matrix.num_modelled}")
         if self.state.matrix.nfull == self.state.matrix.nmodel:
             if self.ready_to_halt():
+                self.state.bots[0].halt()
                 return False
             for i in range(1, 21):
                 self.active[i] = HeadHome()
