@@ -5,7 +5,7 @@ import coord
 
 
 if __name__ == '__main__':
-    st = state.State(problem=1)
+    st = state.State.create(problem=1)
     cmd = commands.read_nbt_iter( open('dfltTracesL/LA001.nbt', 'rb').read() )
     
     while cmd:

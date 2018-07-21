@@ -182,19 +182,20 @@ class MatrixPlane(Mapping):
         candidates = [(key[0] + d[0], key[1] + d[1]) for d in deltas]
         return [n for n in candidates if self.matrix.in_range(self.keygen(n))]
 
-
 @dataclass
 class State(object):
     matrix: Matrix
-    bots: list
-    trace: list
+    bots: list = field(default_factory = list)
+    trace: list = field(default_factory = list)
     energy: int = 0
     harmonics: bool = False # True == High, False == Low
 
-    def __init__(self, problem=1):
+    @classmethod
+    def create(cls, problem=1):
+        self = cls()
         self.matrix = Matrix(problem=problem)
-        self.bots = [Bot(state=self)]
-        self.trace = list()
+        self.bots.append(Bot(state=self))
+        return self
 
     def find_bot(self, bid):
         for b in self.bots:
@@ -220,8 +221,6 @@ class Bot(object): # nanobot
     bid: int = 1
     pos: Coord = Coord(0,0,0)
     seeds: list = field(default_factory = default_seeds)
-
-    
 
     def halt(self):
         if len(self.state.bots) > 1:
