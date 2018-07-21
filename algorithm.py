@@ -29,7 +29,12 @@ def convex_hull(st):
         "maxz": maxz,
     }
 
+def compress(st, bot, path):
+    pass
+
 def shortest_path(st, bot, c):
+    if bot.pos == c:
+        return []
     seen = set()
     stack = []
 
@@ -58,9 +63,7 @@ def shortest_path(st, bot, c):
     return list(reversed(path))
 
 def back_to_base(st):
-    path = shortest_path(st, st.bots[0], Coord(0,0,0))
-    for i in range(1, len(path)):
-        bot.smove(path[i] - path[i-1])
+    compress(st, st.bots[0], shortest_path(st, bot, Coord(0,0,0)))
     
 def skip(bot, st, diff):
     jump = 1
