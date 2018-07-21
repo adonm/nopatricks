@@ -25,5 +25,9 @@ if __name__ == '__main__':
         bot.smove(UP)
         xdir *= -1
     
-    print(st.trace)
+    
+    data = commands.export_nbt( st.trace )
+    with open("test01.nbt", "wb") as file:
+        file.write(data)
+
     
