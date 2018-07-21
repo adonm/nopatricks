@@ -25,3 +25,5 @@ if __name__ == '__main__':
         bot.smove(UP)
         xdir *= -1
     
+    print(st.trace)
+    
