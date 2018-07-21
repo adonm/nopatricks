@@ -11,9 +11,9 @@ if __name__ == '__main__':
     bot.smove(UP)
     zdir = 1
     xdir = 1
-    while bot.pos.y < st.R-2 and not st.is_model_finished():
-        while (xdir == 1 and bot.pos.x < st.R-2) or (xdir == -1 and bot.pos.x > 0):
-            while (zdir == 1 and bot.pos.z < st.R-2) or (zdir==-1 and bot.pos.z > 0):
+    while bot.pos.y < st.R-1 and not st.is_model_finished():
+        while (xdir == 1 and bot.pos.x < st.R-1) or (xdir == -1 and bot.pos.x > 0):
+            while (zdir == 1 and bot.pos.z < st.R-1) or (zdir==-1 and bot.pos.z > 0):
                 bot.smove(FORWARD.mul(zdir))
                 below = st.matrix[bot.pos + DOWN]
                 belowp = bot.pos + DOWN
