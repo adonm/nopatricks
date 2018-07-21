@@ -129,7 +129,6 @@ class Matrix(Mapping):
     
     def set_grounded(self, c):
         v = self[c]
-        assert v.val & Voxel.FULL
         v.val |= Voxel.GROUNDED
         self.ngrounded += 1
 
@@ -338,12 +337,14 @@ class Bot(object): # nanobot
         p = self.pos + nd
         matrix = self.state.matrix
         if matrix[p].is_void():
-            matrix.set_full(p)
             if matrix.would_be_grounded(p):
                 self.state.matrix.set_grounded(p)
                 matrix.ground_adjacent(p)
-            else:
+            elif self.state.harmonics:
                 matrix.ungrounded.add(p)
+            else:
+                raise RuntimeError('tried to fill ungrounded point {} at time {}'.format(p, self.state.step_id))
+            matrix.set_full(p)
             
             self.state.energy += 12
         else:
