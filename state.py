@@ -41,14 +41,6 @@ class Voxel:
     def is_model(self):
         return self.val & Voxel.MODEL
 
-    def set_grounded(self):
-        assert self.val & Voxel.FULL
-        self.val |= Voxel.GROUNDED
-
-    def set_full(self):
-        assert not (self.val & Voxel.FULL)
-        self.val |= Voxel.FULL
-
     def __repr__(self):
         return hex(self.val)[2] # just display first 4 bits in mask as hex
 
@@ -60,6 +52,8 @@ class Matrix(Mapping):
 
     def __init__(self, **kwargs):
         self.ungrounded = set()
+        self.ngrounded = 0
+        self.nfull = 0
         if 'size' in kwargs:
             self.size = kwargs['size']
             self.state = [Voxel.empty() for i in range(self.size ** 3)]
@@ -67,14 +61,8 @@ class Matrix(Mapping):
             self.size, self.state = Matrix._load_file(kwargs['filename'])
         else:
             self.size, self.state = Matrix._load_prob(kwargs.get('problem', 1))
-
-    @property
-    def num_grounded(self):
-        return len([v for v in self.state if v.is_grounded()])
-
-    @property
-    def num_full(self):
-        return len([v for v in self.state if v.is_full()])
+        
+        self.nmodel = len([v for v in self.state if v.is_model()])
 
     @property
     def num_modelled(self):
@@ -131,19 +119,22 @@ class Matrix(Mapping):
         while len(stack) > 0:
             g = stack.pop()
             for v in [x for x in g.adjacent(self.size) if self[x].is_full() and not self[x].is_grounded()]:
-                self[v].set_grounded()
+                self.set_grounded(v)
                 if v in self.ungrounded:
                     self.ungrounded.remove(v)
                 stack.append(v)
-        
-    def calc_grounded(self):
-        stack = []
-        for x in range(0, self.size - 1):
-            for z in range(0, self.size - 1):
-                c = Coord(x,0,z)
-                if self[c].is_full():
-                    self[c].set_grounded()
-                    self.ground_adjacent(c)
+    
+    def set_grounded(self, c):
+        v = self[c]
+        assert v.val & Voxel.FULL
+        v.val |= Voxel.GROUNDED
+        self.ngrounded += 1
+
+    def set_full(self, c):
+        v = self[c]
+        assert not (v.val & Voxel.FULL)
+        v.val |= Voxel.FULL
+        self.nfull += 1
 
     def would_be_grounded(self, p):
         return p.y == 0 or len([x for x in p.adjacent(self.size) if self[x].is_grounded()]) > 0
@@ -219,6 +210,9 @@ class State(object):
         self = cls(Matrix(problem=problem))
         self.bots.append(Bot(state=self))
         return self
+
+    def is_model_finished(self):
+        return self.matrix.nfull == self.matrix.nmodel
 
     def find_bot(self, bid):
         for b in self.bots:
@@ -308,9 +302,9 @@ class Bot(object): # nanobot
         p = self.pos + nd
         matrix = self.state.matrix
         if matrix[p].is_void():
-            matrix[p].set_full()
+            matrix.set_full(p)
             if matrix.would_be_grounded(p):
-                matrix[p].set_grounded()
+                self.state.matrix.set_grounded(p)
                 matrix.ground_adjacent(p)
             else:
                 matrix.ungrounded.add(p)
