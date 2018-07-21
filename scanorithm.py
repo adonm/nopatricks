@@ -17,7 +17,7 @@ def move_to(bot, dest):
 class FillArea:
     def __init__(self, area):
         self.area = area
-        self.targ = area.anchor #TODO find nearest groundable square
+        self.targ = area.anchor #TODO find _nearest_ groundable square
 
     def step(self, brain, bot):
         if self.targ is None:
@@ -28,6 +28,8 @@ class FillArea:
         if isinstance(diff, coord.NearDiff):
             #print(f"fill {self.targ}")
             self.area.points.remove(self.targ)
+            # XXX the selection of next target could probably use work, it seems to
+            # jump around/backtrack a bit...
             self.targ = self.area.closest(self.targ)
             bot.fill(diff)
         else:
@@ -49,6 +51,7 @@ class SpawnBot:
 @dataclass
 class HeadHome:
     def step(self, brain, bot):
+        # TODO probably a good spot to start looking for fusion opportunities if there's other bots left
         if bot.pos == Coord(0, 0, 0):
             return False
         move_to(bot, Coord(0, 0, 0))
@@ -78,8 +81,6 @@ class ScanBrain:
         print(f"Found {len(areas)} area(s) @ y={self.y}\n" + "\n".join(map(repr, areas)))
         if len(areas) == 0 and sum([int(v.is_model()) for v in plane.values()]) == 0:
             self.dir = -self.dir
-        #if len(areas) > 20:
-        #    raise Exception("TODO merge areas together")
         if len(areas) > len(self.state.bots):
             parent = self.state.bots[0] # TODO find bot with lowest seeds[0]?
             self.active[parent.bid] = SpawnBot(areas[-1].anchor, 0.1)
