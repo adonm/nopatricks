@@ -1,12 +1,14 @@
 #!/usr/bin/env python3
 
 from abc import ABC, abstractmethod
-from math import ceil
+import math
 
 # Note Area doesn't define the type of coordinates; it happily works with Coord or tuples
 class Area:
-    def __init__(self, id, coord):
+    def __init__(self, plane, id, coord):
+        self.plane = plane
         self.id = id # 1-based
+        self.anchor = coord # remember the anchor because we know it's a groundable point
         self.points = set()
         self.points.add(coord)
         self.min = list(coord)
@@ -18,19 +20,23 @@ class Area:
             self.min[i] = min(self.min[i], coord[i])
             self.max[i] = max(self.max[i], coord[i])
 
+    def __repr__(self):
+        return f"{len(self.points)} pt(s): {self.points}"
+
+
 # grounded_fn returns true for a given plane coord if it is fillable while staying grounded
-def scan(plane, grounded_fn):
+def scan(plane, grounded_fn, pts_limit=math.inf):
     areas = []
     for k in plane:
         if plane[k].is_model() and grounded_fn(k) and not any([k in a.points for a in areas]):
-            area = Area(len(areas) + 1, k)
+            area = Area(plane, len(areas) + 1, k)
             areas.append(area)
-            flood_fill(plane, areas, area, k)
+            flood_fill(plane, areas, area, k, pts_limit)
     return areas
 
-def flood_fill(plane, areas, area, start):
+def flood_fill(plane, areas, area, start, pts_limit):
     stack = [start]
-    while len(stack) > 0:
+    while len(stack) > 0 and len(area.points) < pts_limit:
         k = stack.pop()
         for n in plane.adjacent(k):
             if plane[n].is_model() and not any([n in a.points for a in areas]) and n not in stack:
@@ -69,7 +75,7 @@ class PartitionSquares(Partitioner):
 
         for area in areas:
             if area not in jobs:
-                sub_areas = partition_area(plane, area, ceil(len(area.points) / pts_per_job))
+                sub_areas = partition_area(plane, area, math.ceil(len(area.points) / pts_per_job))
                 jobs.extend(sub_areas)
 
         return jobs

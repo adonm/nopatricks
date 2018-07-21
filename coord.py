@@ -188,7 +188,10 @@ def minmax(a, b):
 
 # note: don't construct Diff objects directly; use diff() func to get correct subclass
 def diff(dx, dy, dz):
-    if clen(dx, dy, dz) == 1:
+    c = clen(dx, dy, dz)
+    if c == 0:
+        return Diff(0, 0, 0)
+    elif c == 1:
         if mlen(dx, dy, dz) <= 2:
             return NearDiff(dx, dy, dz)
     elif is_lcd(dx, dy, dz):
