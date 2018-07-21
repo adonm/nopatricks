@@ -204,6 +204,6 @@ def diff(dx, dy, dz):
 UP = diff(0, 1, 0)
 DOWN = diff(0, -1, 0)
 LEFT = diff(1, 0, 0)
-RIGHT = diff(-1, -1, 0)
+RIGHT = diff(-1, 0, 0)
 FORWARD = diff(0, 0, 1)
 BACK = diff(0, 0, -1)

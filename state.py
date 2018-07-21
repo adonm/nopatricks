@@ -190,10 +190,13 @@ class State(object):
     energy: int = 0
     harmonics: bool = False # True == High, False == Low
     step_id: int = 0
-    R: int = 0
     bots_to_add: list = field(default_factory = list)
     primary_fuse_bots: list = field(default_factory = list)
     secondary_fuse_bots: list = field(default_factory = list)
+
+    @property
+    def R(self):
+        return self.matrix.size
 
     @classmethod
     def create(cls, problem=1):
