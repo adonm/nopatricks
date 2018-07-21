@@ -2,7 +2,7 @@
 import state
 import commands
 from coord import Coord, diff, UP, DOWN, LEFT, RIGHT, FORWARD, BACK
-import sys
+import sys, os
 import math
 from algorithm import *
 
@@ -75,16 +75,17 @@ def shortest_path_algo(st):
 
 if __name__ == '__main__':
     problem = int(sys.argv[1])
-    st = state.State.create(problem=problem)
-    shortest_path_algo(st)
-    back_to_base(st, st.bots[0])
-    st.bots[0].halt()
-    st.step()
-        
-    print( st )
-    print( 'energy: {}, default: {}, score: {:0.3f}/{:0.3f}'.format( st.energy, st.default_energy, st.score, st.score_max ) )
-    data = commands.export_nbt( st.trace )
-    with open("submission/LA"+str(problem).zfill(3)+".nbt", "wb") as file:
-        file.write(data)
+    if not os.path.exists("submission/LA"+str(problem).zfill(3)+".nbt"):
+        st = state.State.create(problem=problem)
+        shortest_path_algo(st)
+        back_to_base(st, st.bots[0])
+        st.bots[0].halt()
+        st.step()
+            
+        print( st )
+        print( 'energy: {}, default: {}, score: {:0.3f}/{:0.3f}'.format( st.energy, st.default_energy, st.score, st.score_max ) )
+        data = commands.export_nbt( st.trace )
+        with open("submission/LA"+str(problem).zfill(3)+".nbt", "wb") as file:
+            file.write(data)
 
     
