@@ -50,8 +50,8 @@ if __name__ == '__main__':
     xdir = 1
     bounds = convex_hull(st)
     while bot.pos.y < st.R-1 and not st.is_model_finished():
-        while (xdir == 1 and bot.pos.x < bounds[y]["maxx"]) or (xdir == -1 and bot.pos.x > bounds[y]["minx"]):
-            while (zdir == 1 and bot.pos.z < bounds[y]["maxz"]) or (zdir==-1 and bot.pos.z > bounds[y]["minz"]):
+        while (xdir == 1 and bot.pos.x < bounds[bot.pos.y]["maxx"]) or (xdir == -1 and bot.pos.x > bounds[bot.pos.y]["minx"]):
+            while (zdir == 1 and bot.pos.z < bounds[bot.pos.y]["maxz"]) or (zdir==-1 and bot.pos.z > bounds[bot.pos.y]["minz"]):
                 bot.smove(FORWARD.mul(zdir))
                 below = st.matrix[bot.pos + DOWN]
                 belowp = bot.pos + DOWN
