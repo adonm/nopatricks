@@ -20,7 +20,7 @@ def shortest_path_algo(st):
             zcoords.reverse()
         pt = zcoords.pop()
         for a in pt.adjacent(st.R):
-            # print(a)
+            print(a)
             if st.matrix[a].is_void():
                 path = shortest_path(st, st.bots[0], a)
                 # print(path)
@@ -29,6 +29,7 @@ def shortest_path_algo(st):
                     # print(st.bots[0].pos)
                     bot.fill(pt - a)
                     break
+            print("done")
         # break
 
 if __name__ == '__main__':
