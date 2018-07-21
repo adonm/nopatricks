@@ -4,7 +4,7 @@ from coord import Coord
 from mrcrowbar.utils import to_uint64_le, unpack_bits
 import commands
 
-class Voxel(int):
+class Voxel:
     """ Voxel represents mutable location information """
 
     # current implementation is a bitmask held in an int
@@ -16,6 +16,9 @@ class Voxel(int):
     # the model bit is on if this location forms part of the target model
     MODEL = 1 << 7
 
+    def __init__(self, val):
+        self.val = val
+
     @staticmethod
     def empty(is_model=False):
         """ Initialises an empty voxel which is part of the model or not. """
@@ -25,21 +28,29 @@ class Voxel(int):
 
     # access to state is via functions so the implementation is free to change
     def is_void(self):
-        return not self & Voxel.FULL
+        return not self.val & Voxel.FULL
 
     def is_full(self):
-        return self & Voxel.FULL
+        return self.val & Voxel.FULL
 
     def is_grounded(self):
-        return self & Voxel.GROUNDED
+        return self.val & Voxel.GROUNDED
+
+    def is_model(self):
+        return self.val & Voxel.MODEL
 
     def set_grounded(self):
-        assert self & Voxel.FULL
-        self |= Voxel.GROUNDED
+        assert self.val & Voxel.FULL
+        self.val |= Voxel.GROUNDED
 
     def set_full(self):
-        assert not (self & Voxel.FULL)
-        self |= Voxel.FULL
+        assert not (self.val & Voxel.FULL)
+        self.val |= Voxel.FULL
+
+    def __repr__(self):
+        c1 = "_" if self.is_void() else "Ö" if self.is_grounded() else "O"
+        c2 = "+" if self.is_model() else "_"
+        return c1 + c2
 
 
 class Matrix(object):
@@ -131,7 +142,7 @@ class State(object):
     harmonics: bool # True == High, False == Low
     matrix: Matrix
     bots: list
-    commands: list
+    commands: list = field(default_factory=list)
 
     def find_bot(self, bid):
         for b in self.bots:
