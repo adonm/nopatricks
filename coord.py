@@ -71,21 +71,6 @@ class Coord:
                     else:
                         diffs.push(x, y, z)
 
-# note: don't construct Diff objects directly; use diff() func to get correct subclass
-def diff(dx, dy, dz):
-    if clen(dx, dy, dz) == 1:
-        if mlen(dx, dy, dz) <= 2:
-            return NearDiff(dx, dy, dz)
-    elif is_lcd(dx, dy, dz):
-        m = mlen(dx, dy, dz)
-        if m <= 5:
-            return ShortDiff(dx, dy, dz)
-        elif m <= 15:
-            return LongDiff(dx, dy, dz)
-        return LinearDiff(dx, dy, dz)
-    return Diff(dx, dy, dz)
-
-
 def is_lcd(dx, dy, dz):
     idx = int(dx!=0)
     idy = int(dy!=0)
@@ -199,3 +184,26 @@ def minmax(a, b):
     if a > b:
         return b, a
     return a, b
+
+
+# note: don't construct Diff objects directly; use diff() func to get correct subclass
+def diff(dx, dy, dz):
+    if clen(dx, dy, dz) == 1:
+        if mlen(dx, dy, dz) <= 2:
+            return NearDiff(dx, dy, dz)
+    elif is_lcd(dx, dy, dz):
+        m = mlen(dx, dy, dz)
+        if m <= 5:
+            return ShortDiff(dx, dy, dz)
+        elif m <= 15:
+            return LongDiff(dx, dy, dz)
+        return LinearDiff(dx, dy, dz)
+    return Diff(dx, dy, dz)
+
+
+UP = diff(0, 1, 0)
+DOWN = diff(0, -1, 0)
+LEFT = diff(1, 0, 0)
+RIGHT = diff(-1, -1, 0)
+FORWARD = diff(0, 0, 1)
+BACK = diff(0, 0, -1)

@@ -1,17 +1,10 @@
 #!/usr/bin/env python3
 import state
 import commands
-from coord import Coord, diff
+from coord import Coord, diff, UP, DOWN, LEFT, RIGHT, FORWARD, BACK
 trace = []
 
 import sys
-
-UP = diff(0, 1, 0)
-DOWN = diff(0, -1, 0)
-LEFT = diff(1, 0, 0)
-RIGHT = diff(-1, -1, 0)
-FORWARD = diff(0, 0, 1)
-BACK = diff(0, 0, -1)
 
 
 if __name__ == '__main__':
