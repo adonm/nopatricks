@@ -5,16 +5,6 @@ from coord import Coord, diff, UP, DOWN, LEFT, RIGHT, FORWARD, BACK
 import sys
 import math
 
-
-def back_to_base(st):
-    bot = st.bots[0]
-    while bot.pos.z != 0:
-        bot.smove(BACK)
-    while bot.pos.x != 0:
-        bot.smove(RIGHT)
-    while bot.pos.y != 0:
-        bot.smove(DOWN)
-    
 def convex_hull(st):
     minx = st.R-1
     maxx = 0
@@ -44,30 +34,34 @@ def shortest_path(st, bot, c):
     stack = []
 
     seen.add(bot.pos)
-    stack.push(bot.pos)
+    stack.append(bot.pos)
 
     table = {}
 
     found = False
     while not found:
         p = stack.pop()
-        for n in p.adjacent():
-            if n not in seen and n.is_void():
+        for n in p.adjacent(st.R):
+            if n not in seen and st.matrix[n].is_void():
                 table[n] = p
                 seen.add(n)
-                stack.push(n)
+                stack.append(n)
                 if n == c:
                     found = True
 
     path = []
     x = c
     while x != bot.pos:
-        path.push(x)
-        x = table(x)
-    
-    return reversed(path)
-    
+        path.append(x)
+        x = table[x]
+    path.append(bot.pos)
+    return list(reversed(path))
 
+def back_to_base(st):
+    path = shortest_path(st, st.bots[0], Coord(0,0,0))
+    for i in range(1, len(path)):
+        bot.smove(path[i] - path[i-1])
+    
 if __name__ == '__main__':
     problem = int(sys.argv[1])
     st = state.State.create(problem=problem)
