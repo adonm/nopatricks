@@ -128,8 +128,8 @@ class LMove( mrc.Block ):
     @sld1x.setter
     def sld1x( self, value ):
         assert value in range( -5, 11 )
-        self.sld2a = 0b01
-        self.sld2i = value + 5
+        self.sld1a = 0b01
+        self.sld1i = value + 5
 
     @property
     def sld1y( self ):
@@ -138,8 +138,8 @@ class LMove( mrc.Block ):
     @sld1y.setter
     def sld1y( self, value ):
         assert value in range( -5, 11 )
-        self.sld2a = 0b10
-        self.sld2i = value + 5
+        self.sld1a = 0b10
+        self.sld1i = value + 5
 
     @property
     def sld1z( self ):
@@ -148,8 +148,8 @@ class LMove( mrc.Block ):
     @sld1z.setter
     def sld1z( self, value ):
         assert value in range( -5, 11 )
-        self.sld2a = 0b11
-        self.sld2i = value + 5
+        self.sld1a = 0b11
+        self.sld1i = value + 5
 
     @property
     def repr( self ):
