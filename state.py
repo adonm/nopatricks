@@ -313,13 +313,18 @@ class Bot(object): # nanobot
             self.state.trace.append( commands.Flip() )
 
     def smove(self, diff):
-        self.pos += diff
+        dest = self.pos + diff
+        if not self.state.matrix[dest].is_void():
+            raise RuntimeError('tried to move to occupied point {} at time {}'.format(dest, self.state.step_id))
+        self.pos = dest
         self.state.energy += 2 * diff.mlen()
         if self.state.enable_trace:
             self.state.trace.append( commands.SMove().set_lld( diff.dx, diff.dy, diff.dz ) )
 
     def lmove(self, diff1, diff2):
-        self.pos += diff1 + diff2
+        dest = self.pos + diff1 + diff2
+        if not self.state.matrix[dest].is_void():
+            raise RuntimeError('tried to move to occupied point {} at time {}'.format(dest, self.state.step_id))
         self.state.energy += 2 * (diff1.mlen() + 2 + diff2.mlen())
         if self.state.enable_trace:
             self.state.trace.append( commands.LMove().set_sld1( diff1.dx, diff1.dy, diff1.dz ).set_sld2( diff2.dx, diff2.dy, diff2.dz ) )
