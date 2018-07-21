@@ -13,10 +13,10 @@ def back_to_base(st):
     while bot.pos.y != 0:
         bot.smove(DOWN)
     
-        
 
 if __name__ == '__main__':
-    st = state.State.create(problem=1)
+    problem = int(sys.argv[1])
+    st = state.State.create(problem=problem)
     bot = st.bots[0]
     bot.smove(UP)
     zdir = 1
@@ -42,7 +42,7 @@ if __name__ == '__main__':
     bot.halt()
         
     data = commands.export_nbt( st.trace )
-    with open("test01.nbt", "wb") as file:
+    with open("submission/LA"+str(problem).zfill(3)+".nbt", "wb") as file:
         file.write(data)
 
     
