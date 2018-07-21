@@ -202,7 +202,6 @@ class State(object):
     def create(cls, problem=1):
         self = cls(Matrix(problem=problem))
         self.bots.append(Bot(state=self))
-        self.R = self.matrix.size
         return self
 
     def find_bot(self, bid):
