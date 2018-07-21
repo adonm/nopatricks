@@ -25,4 +25,5 @@ echo $SHA
 echo `openssl sha -sha256 submission.zip | cut -d ' ' -f 2`
 unzip submission.zip
 cd ..
+
 rm -rf test
