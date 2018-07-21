@@ -93,6 +93,7 @@ class Matrix(Mapping):
     def coord_index(self, coord):
         if not isinstance(coord, Coord):
             raise TypeError()
+        assert (0 <= coord.x < self.size) and (0 <= coord.y < self.size) and (0 <= coord.z < self.size)
         return coord.x * self.size * self.size + coord.y * self.size + coord.z
 
     def in_range(self, val):
