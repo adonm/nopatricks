@@ -190,6 +190,9 @@ class State(object):
     energy: int = 0
     harmonics: bool = False # True == High, False == Low
     step_id: int = 0
+    bots_to_add: list = field(default_factory = list)
+    primary_fuse_bots: list = field(default_factory = list)
+    secondary_fuse_bots: list = field(default_factory = list)
 
     @property
     def R(self):
@@ -214,6 +217,23 @@ class State(object):
         
         self.energy += 20 * len(self.bots)
         self.step_id += 1
+
+        for prim_bot, sec_pos in self.primary_fuse_bots:
+            for i, (sec_bot, prim_pos) in enumerate(self.secondary_fuse_bots):
+                if prim_bot.pos == prim_pos and sec_bot.pos == sec_pos:
+                    self.secondary_fuse_bots.pop(i)
+                    prim_bot.seeds.append(sec_bot.bid)
+                    prim_bot.seeds.extend(sec_bot.seeds)
+                    self.bots.remove(sec_bot)
+                    self.energy -= 24
+                    break
+            raise ValueError( 'missing secondary fusion match for {}'.format(prim_bot.bid) )
+        if self.secondary_fuse_bots:
+            raise ValueError( 'missing primary fusion match for {}'.format(self.secondary_fuse_bots[0][0].bid) )
+        self.primary_fuse_bots.clear()
+
+        self.bots.extend(self.bots_to_add)
+        self.bots_to_add.clear()
 
 
     def __repr__(self):
@@ -256,14 +276,16 @@ class Bot(object): # nanobot
     def fission(self, nd, m):
         f = Bot(self.seeds[0], self.pos + nd, self.seeds[1:m+2])
         self.seeds = self.seeds[m+2:]
-        self.state.bots.append(f)
+        self.state.bots_to_add.append(f)
         self.state.energy += 24
         self.state.trace.append( commands.Fission().set_nd( nd.dx, nd.dy, nd.dz ).set_m( m ) )
 
     def fusionp(self, nd):
+        self.primary_fuse_bots.append((self, self.pos+nd))
         self.state.trace.append( commands.FusionP().set_nd( nd.dx, nd.dy, nd.dz ) )
 
     def fusions(self, nd):
+        self.secondary_fuse_bots.append((self, self.pos+nd))
         self.state.trace.append( commands.FusionS().set_nd( nd.dx, nd.dy, nd.dz ) )
 
     def fill(self, nd):
