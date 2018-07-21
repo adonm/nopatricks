@@ -45,7 +45,7 @@ def shortest_path(st, bot, c):
             if n not in seen and st.matrix[n].is_void():
                 table[n] = p
                 seen.add(n)
-                stack.append(n)
+                stack.insert(0, n)
                 if n == c:
                     found = True
 
