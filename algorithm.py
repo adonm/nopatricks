@@ -42,19 +42,25 @@ def next_move(st, bot, path):
     k -= 1
     
     if i!=j and k!=j:
+        # print("lmove")
+        # print(path[j] - path[i])
+        # print(path[k] - path[j])
         bot.lmove(path[j] - path[i], path[k] - path[j])
-        return k + 1
-    else: 
+        return k
+    elif i+1<len(path):
+        # print("smove")
+        # print(path[i+1] - path[i])
         bot.smove(path[i+1] - path[i])
-        return i+2
+        return i+1
+    else:
+        return i+1
 
 def compress(st, bot, path):
     i = 0
-    print(bot.pos)
-    print(path)
     while i < len(path):
         i = next_move(st, bot, path)
         path = path[i:]
+        # print(path)
         i = 0
 
 def smove_path(st, bot, path):
@@ -73,7 +79,7 @@ def shortest_path(st, bot, c):
     table = {}
 
     found = False
-    while not found:
+    while not found and len(stack)>0:
         p = stack.pop()
         for n in p.adjacent(st.R):
             if n not in seen and st.matrix[n].is_void():
@@ -83,6 +89,9 @@ def shortest_path(st, bot, c):
                 if n == c:
                     found = True
 
+    if not found:
+        return None
+
     path = []
     x = c
     while x != bot.pos:
@@ -91,8 +100,8 @@ def shortest_path(st, bot, c):
     path.append(bot.pos)
     return list(reversed(path))
 
-def back_to_base(st):
-    compress(st, st.bots[0], shortest_path(st, bot, Coord(0,0,0)))
+def back_to_base(st, bot):
+    compress(st, bot, shortest_path(st, bot, Coord(0,0,0)))
     
 def skip(bot, st, diff):
     jump = 1
@@ -111,9 +120,7 @@ def skip(bot, st, diff):
     bot.smove(belowp - (bot.pos + DOWN))
     return below, belowp
 
-if __name__ == '__main__':
-    problem = int(sys.argv[1])
-    st = state.State.create(problem=problem)
+def old_algo(st):
     bot = st.bots[0]
     bot.smove(UP)
     zdir = 1
@@ -133,9 +140,45 @@ if __name__ == '__main__':
             zdir *= -1
         bot.smove(UP)
         xdir *= -1
+
+def shortest_path_algo(st):
+    bot = st.bots[0]
+    bot.smove(UP)
     
-    back_to_base(st)
-    bot.halt()
+    pts = list(st.matrix.keys())
+    minPt = 0
+
+    while not st.is_model_finished():
+        j = None
+        while st.matrix[pts[minPt]].is_full() or not st.matrix[pts[minPt]].is_model():
+            minPt += 1
+
+        for i in range(minPt, len(pts)):
+            if st.matrix[pts[i]].is_void() and st.matrix[pts[i]].is_model() and st.matrix.would_be_grounded(pts[i]):
+                j = i
+                break
+        if j is None:
+            break
+
+        # print(pts[j])
+        pt = pts[j]
+        for a in pt.adjacent(st.R):
+            # print(a)
+            path = shortest_path(st, st.bots[0], a)
+            # print(path)
+            if path is not None:
+                compress(st, st.bots[0], path)
+                # print(st.bots[0].pos)
+                bot.fill(pt - a)
+                break
+        # break
+
+if __name__ == '__main__':
+    problem = int(sys.argv[1])
+    st = state.State.create(problem=problem)
+    shortest_path_algo(st)
+    back_to_base(st, st.bots[0])
+    st.bots[0].halt()
         
     data = commands.export_nbt( st.trace )
     with open("submission/LA"+str(problem).zfill(3)+".nbt", "wb") as file:
