@@ -16,13 +16,13 @@ def back_to_base(st):
         bot.smove(DOWN)
     
 def convex_hull(st):
-    minx = math.inf
-    maxx = -1
-    minz = math.inf
-    maxz = -1
-
-    for x in range(st.R):
-        for y in range(st.R):
+    bounds = []
+    for y in range(st.R):
+        minx = math.inf
+        maxx = -1
+        minz = math.inf
+        maxz = -1
+        for x in range(st.R):
             for z in range(st.R):
                 if st.matrix[Coord(x, y, z)].is_model():
                     if x < minx:
@@ -33,14 +33,13 @@ def convex_hull(st):
                         minz = z
                     if z > maxz:
                         maxz = z
-    
-    return {
-        "minx": minx,
-        "maxx": maxx,
-        "minz": minz,
-        "maxz": maxz,
-    }
-
+        bounds.append({
+            "minx": minx,
+            "maxx": maxx,
+            "minz": minz,
+            "maxz": maxz,
+        })
+    return bounds
 
 if __name__ == '__main__':
     problem = int(sys.argv[1])
@@ -51,8 +50,8 @@ if __name__ == '__main__':
     xdir = 1
     bounds = convex_hull(st)
     while bot.pos.y < st.R-1 and not st.is_model_finished():
-        while (xdir == 1 and bot.pos.x < bounds["maxx"]) or (xdir == -1 and bot.pos.x > bounds["minx"]):
-            while (zdir == 1 and bot.pos.z < bounds["maxz"]) or (zdir==-1 and bot.pos.z > bounds["minz"]):
+        while (xdir == 1 and bot.pos.x < bounds[y]["maxx"]) or (xdir == -1 and bot.pos.x > bounds[y]["minx"]):
+            while (zdir == 1 and bot.pos.z < bounds[y]["maxz"]) or (zdir==-1 and bot.pos.z > bounds[y]["minz"]):
                 bot.smove(FORWARD.mul(zdir))
                 below = st.matrix[bot.pos + DOWN]
                 belowp = bot.pos + DOWN
