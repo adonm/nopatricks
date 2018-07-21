@@ -38,7 +38,9 @@ if __name__ == '__main__':
                 else:
                     raise TypeError( 'oh noes a {}'.format( klass ) )
             st.step()
-            print( st )
+            if st.step_id % 1000 == 0:
+                print( st )
     except StopIteration:
         pass
     print( 'all done!' )
+    print( st )
