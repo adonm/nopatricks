@@ -189,11 +189,11 @@ class State(object):
     trace: list = field(default_factory = list)
     energy: int = 0
     harmonics: bool = False # True == High, False == Low
+    step_id: int = 0
 
     @classmethod
     def create(cls, problem=1):
-        self = cls()
-        self.matrix = Matrix(problem=problem)
+        self = cls(Matrix(problem=problem))
         self.bots.append(Bot(state=self))
         return self
 
@@ -210,6 +210,11 @@ class State(object):
             self.energy += 3 * volume
         
         self.energy += 20 * len(self.bots)
+        self.step_id += 1
+
+
+    def __repr__(self):
+        return 'step_id: {}, len( bots ): {}, energy: {}'.format(self.step_id, len( self.bots ), self.energy)
 
 
 def default_seeds():
