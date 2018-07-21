@@ -143,7 +143,7 @@ if __name__ == '__main__':
         st.step()
 
     print(st)
-    filename = "submissionScan/LA%03d.nbt" % prob
+    filename = "submission/LA%03d.nbt" % prob
     sys.stderr.write('{}: {}\n'.format(filename, st.score) )
     print( '{}: energy: {}, default: {}, score: {:0.3f}/{:0.3f}'.format( filename, st.energy, st.default_energy, st.score, st.score_max ) )
     with open(filename, "wb") as file:

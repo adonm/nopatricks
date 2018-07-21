@@ -173,6 +173,8 @@ if __name__ == '__main__':
     problem = int(sys.argv[1])
     st = state.State.create(problem=problem)
     old_algo(st)
+    if st.harmonics is True:
+        st.bots[0].flip()
     back_to_base(st, st.bots[0])
     st.bots[0].halt()
     st.step()
