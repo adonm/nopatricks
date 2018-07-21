@@ -11,8 +11,8 @@ class Voxel:
     # current implementation is a bitmask held in an int
     # the first few bits are the filled state
     VOID = 0
-    FULL = 1
-    GROUNDED = 2
+    FULL = 1 << 0
+    GROUNDED = 1 << 1
 
     # the model bit is on if this location forms part of the target model
     MODEL = 1 << 7
