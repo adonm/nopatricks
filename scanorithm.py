@@ -139,12 +139,8 @@ if __name__ == '__main__':
     prob = parse()
     st = state.State.create(problem=prob)
     brain = ScanBrain(st)
-    i = 5000
     while brain.step():
         st.step()
-        i -= 1
-        if i == 0:
-            break
 
     print(st)
     print( 'energy: {}, default: {}, score: {:0.3f}/{:0.3f}'.format( st.energy, st.default_energy, st.score, st.score_max ) )
