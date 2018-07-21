@@ -144,7 +144,7 @@ class Matrix(Mapping):
         return MatrixPlane(self, y=y)
 
     def __repr__(self):
-        return "size: {}, model/full/grounded: {}/{}/{}".format(self.size, self.num_modelled, self.num_full, self.num_grounded)
+        return "size: {}, model/full/grounded: {}/{}/{}".format(self.size, self.nmodel, self.nfull, self.ngrounded)
 
 
 class MatrixPlane(Mapping):
