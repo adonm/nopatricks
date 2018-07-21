@@ -27,7 +27,8 @@ class FillArea:
         if isinstance(diff, coord.NearDiff):
             #print(f"fill {self.targ}")
             self.area.points.remove(self.targ)
-            self.targ = self.area.closest(self.targ)
+            ground_fn =  lambda k: brain.state.matrix.would_be_grounded(self.area.plane.keygen(k))
+            self.targ = self.area.closest(self.targ, ground_fn)
             bot.fill(diff)
         else:
             # try to move to the spot above our target
@@ -138,17 +139,17 @@ if __name__ == '__main__':
     prob = parse()
     st = state.State.create(problem=prob)
     brain = ScanBrain(st)
-    i = 5000
     while brain.step():
         st.step()
-        i -= 1
-        if i == 0:
-            break
 
     print(st)
-
-    with open("submission/LA"+str(prob).zfill(3)+".nbt", "wb") as file:
+    filename = "submission/LA%03d.nbt" % prob
+    sys.stderr.write('{}: {}\n'.format(filename, st.score) )
+    print( '{}: energy: {}, default: {}, score: {:0.3f}/{:0.3f}'.format( filename, st.energy, st.default_energy, st.score, st.score_max ) )
+    with open(filename, "wb") as file:
         file.write(commands.export_nbt(st.trace))
+
+
 
 
 # scores (problem time/energy)

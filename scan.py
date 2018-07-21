@@ -20,8 +20,8 @@ class Area:
             self.min[i] = min(self.min[i], coord[i])
             self.max[i] = max(self.max[i], coord[i])
 
-    def closest(self, coord):
-        return min(self.points, default=None, key=lambda p: abs(p[0] - coord[0]) + abs(p[1] - coord[1]))
+    def closest(self, coord, grounded_fn):
+        return min((x for x in self.points if grounded_fn(x)), default=None, key=lambda p: abs(p[0] - coord[0]) + abs(p[1] - coord[1]))
 
     def __repr__(self):
         return f"{len(self.points)} pt(s): {self.points}"
