@@ -6,27 +6,36 @@ import sys
 import math
 from algorithm import *
 
+pts = None
+minPt = 0
+
+def next_best_point(st):
+    global pts
+    global minPt
+    if pts is None:
+        pts = list(st.matrix.keys())
+    j = None	
+    while st.matrix[pts[minPt]].is_full() or not st.matrix[pts[minPt]].is_model():	
+        minPt += 1	
+
+    for i in range(minPt, len(pts)):	
+        if st.matrix[pts[i]].is_void() and st.matrix[pts[i]].is_model() and st.matrix.would_be_grounded(pts[i]):	
+            j = i	
+            break	
+    if j is None:	
+        return None
+    return pts[j]
+    
+
+
 def shortest_path_algo(st):
     bot = st.bots[0]
     bot.smove(UP)
-    
-    pts = list(st.matrix.keys())
-    minPt = 0
 
     while not st.is_model_finished():
-        j = None	
-        while st.matrix[pts[minPt]].is_full() or not st.matrix[pts[minPt]].is_model():	
-            minPt += 1	
-	
-        for i in range(minPt, len(pts)):	
-            if st.matrix[pts[i]].is_void() and st.matrix[pts[i]].is_model() and st.matrix.would_be_grounded(pts[i]):	
-                j = i	
-                break	
-        if j is None:	
-            break	
-	
+        
         # print(pts[j])	
-        pt = pts[j]
+        pt = next_best_point(st)
         for a in pt.adjacent(st.R):
             # print(a)
             if st.matrix[a].is_void():
