@@ -21,7 +21,8 @@ class Area:
             self.max[i] = max(self.max[i], coord[i])
 
     def closest(self, coord, grounded_fn):
-        order = [x for x in self.point]
+        #return min((x for x in self.points if grounded_fn(x)), default=None, key=lambda p: abs(p[0] - coord[0]) + abs(p[1] - coord[1])) 
+        order = [x for x in self.points]
         order.sort(key=lambda p: abs(p[0] - coord[0]) + abs(p[1] - coord[1]))
         for x in order:
             if grounded_fn(x):
