@@ -1,10 +1,13 @@
 #!/usr/bin/env python3
-from dataclasses import dataclass, astuple, field
 from coord import Coord
+import commands
+
 from mrcrowbar.utils import to_uint64_le, unpack_bits
 from collections.abc import Mapping
-import commands
 from textwrap import wrap
+import os
+import math
+from dataclasses import dataclass, astuple, field
 
 class Voxel:
     """ Voxel represents mutable location information """
@@ -200,15 +203,27 @@ class State(object):
     bots_to_add: list = field(default_factory = list)
     primary_fuse_bots: list = field(default_factory = list)
     secondary_fuse_bots: list = field(default_factory = list)
+    default_energy: int = 1
 
     @property
     def R(self):
         return self.matrix.size
 
+    @property
+    def score(self):
+        return max(0, self.score_max*(self.default_energy-self.energy)/self.default_energy)
+
+    @property
+    def score_max(self):
+        return math.log2(self.R)*1000
+
     @classmethod
     def create(cls, problem=1):
         self = cls(Matrix(problem=problem))
         self.bots.append(Bot(state=self))
+        test = 'dfltEnergy/LA{:03d}'.format(problem)
+        if os.path.isfile(test):
+            self.default_energy = int(open(test, 'r').read(), 0)
         return self
 
     def is_model_finished(self):
