@@ -118,10 +118,11 @@ class Matrix(Mapping):
         stack = [gc]
         while len(stack) > 0:
             g = stack.pop()
-            for v in [x for x in g.adjacent(self.size) if self[x].is_full()]:
+            for v in [x for x in g.adjacent(self.size) if self[x].is_full() and not self[x].is_grounded()]:
                 self[v].set_grounded()
-                self.ungrounded.remove(v)
-                stack.push(v)
+                if v in self.ungrounded:
+                    self.ungrounded.remove(v)
+                stack.append(v)
         
     def calc_grounded(self):
         stack = []
@@ -295,7 +296,7 @@ class Bot(object): # nanobot
             matrix[p].set_full()
             if matrix.would_be_grounded(p):
                 matrix[p].set_grounded()
-                self.state.ground_adjacent(p)
+                matrix.ground_adjacent(p)
             else:
                 matrix.ungrounded.add(p)
             
