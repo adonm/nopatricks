@@ -1,10 +1,13 @@
 #!/usr/bin/env python3
-from dataclasses import dataclass, astuple, field
 from coord import Coord
+import commands
+
 from mrcrowbar.utils import to_uint64_le, unpack_bits
 from collections.abc import Mapping
-import commands
 from textwrap import wrap
+import os
+import math
+from dataclasses import dataclass, astuple, field
 
 class Voxel:
     """ Voxel represents mutable location information """
@@ -200,15 +203,28 @@ class State(object):
     bots_to_add: list = field(default_factory = list)
     primary_fuse_bots: list = field(default_factory = list)
     secondary_fuse_bots: list = field(default_factory = list)
+    default_energy: int = 1
+    enable_trace: bool = True
 
     @property
     def R(self):
         return self.matrix.size
 
+    @property
+    def score(self):
+        return max(0, self.score_max*(self.default_energy-self.energy)/self.default_energy)
+
+    @property
+    def score_max(self):
+        return math.log2(self.R)*1000
+
     @classmethod
     def create(cls, problem=1):
         self = cls(Matrix(problem=problem))
         self.bots.append(Bot(state=self))
+        test = 'dfltEnergy/LA{:03d}'.format(problem)
+        if os.path.isfile(test):
+            self.default_energy = int(open(test, 'r').read(), 0)
         return self
 
     def is_model_finished(self):
@@ -271,34 +287,40 @@ class Bot(object): # nanobot
 
     def flip(self):
         self.state.harmonics = not self.state.harmonics
-        self.state.trace.append( commands.Flip() )
+        if self.state.enable_trace:
+            self.state.trace.append( commands.Flip() )
 
     def smove(self, diff):
         self.pos += diff
         self.state.energy += 2 * diff.mlen()
-        self.state.trace.append( commands.SMove().set_lld( diff.dx, diff.dy, diff.dz ) )
+        if self.state.enable_trace:
+            self.state.trace.append( commands.SMove().set_lld( diff.dx, diff.dy, diff.dz ) )
 
     def lmove(self, diff1, diff2):
         self.pos += diff1 + diff2
         self.state.energy += 2 * (diff1.mlen() + 2 + diff2.mlen())
-        self.state.trace.append( commands.LMove().set_sld1( diff1.dx, diff1.dy, diff1.dz ).set_sld2( diff2.dx, diff2.dy, diff2.dz ) )
+        if self.state.enable_trace:
+            self.state.trace.append( commands.LMove().set_sld1( diff1.dx, diff1.dy, diff1.dz ).set_sld2( diff2.dx, diff2.dy, diff2.dz ) )
 
     def fission(self, nd, m):
         f = Bot(self.state, self.seeds[0], self.pos + nd, self.seeds[1:m+2])
         self.seeds = self.seeds[m+2:]
         self.state.bots_to_add.append(f)
         self.state.energy += 24
-        self.state.trace.append( commands.Fission().set_nd( nd.dx, nd.dy, nd.dz ).set_m( m ) )
+        if self.state.enable_trace:
+            self.state.trace.append( commands.Fission().set_nd( nd.dx, nd.dy, nd.dz ).set_m( m ) )
 
     def fusionp(self, nd):
         # note: energy accounted for in State.step
         self.primary_fuse_bots.append((self, self.pos+nd))
-        self.state.trace.append( commands.FusionP().set_nd( nd.dx, nd.dy, nd.dz ) )
+        if self.state.enable_trace:
+            self.state.trace.append( commands.FusionP().set_nd( nd.dx, nd.dy, nd.dz ) )
 
     def fusions(self, nd):
         # note: energy accounted for in State.step
         self.secondary_fuse_bots.append((self, self.pos+nd))
-        self.state.trace.append( commands.FusionS().set_nd( nd.dx, nd.dy, nd.dz ) )
+        if self.state.enable_trace:
+            self.state.trace.append( commands.FusionS().set_nd( nd.dx, nd.dy, nd.dz ) )
 
     def fill(self, nd):
         p = self.pos + nd
@@ -314,7 +336,8 @@ class Bot(object): # nanobot
             self.state.energy += 12
         else:
             self.state.energy += 6
-        self.state.trace.append( commands.Fill().set_nd( nd.dx, nd.dy, nd.dz ) )
+        if self.state.enable_trace:
+            self.state.trace.append( commands.Fill().set_nd( nd.dx, nd.dy, nd.dz ) )
 
     def __repr__(self):
         output = self.state.matrix.yplane(self.pos.y).asciigrid()

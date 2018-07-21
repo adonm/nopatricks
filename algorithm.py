@@ -59,6 +59,7 @@ def compress(st, bot, path):
     i = 0
     while i < len(path):
         i = next_move(st, bot, path)
+        st.step()
         path = path[i:]
         # print(path)
         i = 0
@@ -66,6 +67,7 @@ def compress(st, bot, path):
 def smove_path(st, bot, path):
     for i in range(1, len(path)):
         bot.smove(path[i] - path[i-1])
+        st.step()
 
 def shortest_path(st, bot, c):
     if bot.pos == c:
@@ -118,11 +120,13 @@ def skip(bot, st, diff):
             break
         jump += 1
     bot.smove(belowp - (bot.pos + DOWN))
+    st.step()
     return below, belowp
 
 def old_algo(st):
     bot = st.bots[0]
     bot.smove(UP)
+    st.step()
     zdir = 1
     xdir = 1
     bounds = convex_hull(st)
@@ -133,12 +137,17 @@ def old_algo(st):
                 if below.is_model() and below.is_void():
                     if not st.matrix.would_be_grounded(belowp) and st.harmonics == False:
                         bot.flip()
+                        st.step()
                     elif st.matrix.would_be_grounded(belowp) and len(st.matrix.ungrounded) == 0 and st.harmonics == True:
                         bot.flip()
+                        st.step()
                     bot.fill(DOWN)
+                    st.step()
             bot.smove(LEFT.mul(xdir))
+            st.step()
             zdir *= -1
         bot.smove(UP)
+        st.step()
         xdir *= -1
 
 def shortest_path_algo(st):
@@ -179,7 +188,10 @@ if __name__ == '__main__':
     shortest_path_algo(st)
     back_to_base(st, st.bots[0])
     st.bots[0].halt()
+    st.step()
         
+    print( st )
+    print( 'energy: {}, default: {}, score: {:0.3f}/{:0.3f}'.format( st.energy, st.default_energy, st.score, st.score_max ) )
     data = commands.export_nbt( st.trace )
     with open("submission/LA"+str(problem).zfill(3)+".nbt", "wb") as file:
         file.write(data)
