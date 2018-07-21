@@ -47,22 +47,24 @@ if __name__ == '__main__':
     zdir = 1
     xdir = 1
     bounds = convex_hull(st)
-    for i in range(10):
-        while bot.pos.y < st.R-1 and not st.is_model_finished():
-            while (xdir == 1 and bot.pos.x <= bounds["maxx"]) or (xdir == -1 and bot.pos.x >= bounds["minx"]):
-                while (zdir == 1 and bot.pos.z <= bounds["maxz"]) or (zdir==-1 and bot.pos.z >= bounds["minz"]):
-                    bot.smove(FORWARD.mul(zdir))
-                    below = st.matrix[bot.pos + DOWN]
-                    belowp = bot.pos + DOWN
-                    if below.is_model() and below.is_void():
-                        if st.matrix.would_be_grounded(belowp):
-                            bot.fill(DOWN)
-                bot.smove(LEFT.mul(xdir))
-                zdir *= -1
-            bot.smove(UP)
-            xdir *= -1
-        back_to_base(st)
-    print(st)
+    while bot.pos.y < st.R-1 and not st.is_model_finished():
+        while (xdir == 1 and bot.pos.x <= bounds["maxx"]) or (xdir == -1 and bot.pos.x >= bounds["minx"]):
+            while (zdir == 1 and bot.pos.z <= bounds["maxz"]) or (zdir==-1 and bot.pos.z >= bounds["minz"]):
+                bot.smove(FORWARD.mul(zdir))
+                below = st.matrix[bot.pos + DOWN]
+                belowp = bot.pos + DOWN
+                if below.is_model() and below.is_void():
+                    if not st.matrix.would_be_grounded(belowp) and st.harmonics == False:
+                        bot.flip()
+                    elif st.matrix.would_be_grounded(belowp) and len(st.matrix.ungrounded) == 0 and st.harmonics == True:
+                        bot.flip()
+                    bot.fill(DOWN)
+            bot.smove(LEFT.mul(xdir))
+            zdir *= -1
+        bot.smove(UP)
+        xdir *= -1
+    
+    back_to_base(st)
     bot.halt()
         
     data = commands.export_nbt( st.trace )
