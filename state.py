@@ -4,6 +4,7 @@ from coord import Coord
 from mrcrowbar.utils import to_uint64_le, unpack_bits
 from collections.abc import Mapping
 import commands
+from textwrap import wrap
 
 class Voxel:
     """ Voxel represents mutable location information """
@@ -13,9 +14,9 @@ class Voxel:
     VOID = 0
     FULL = 1 << 0
     GROUNDED = 1 << 1
-
     # the model bit is on if this location forms part of the target model
-    MODEL = 1 << 7
+    MODEL = 1 << 2
+
 
     def __init__(self, val):
         self.val = val
@@ -49,9 +50,7 @@ class Voxel:
         self.val |= Voxel.FULL
 
     def __repr__(self):
-        c1 = "_" if self.is_void() else "Ö" if self.is_grounded() else "O"
-        c2 = "+" if self.is_model() else "_"
-        return c1 + c2
+        return hex(self.val)[2] # just display first 4 bits in mask as hex
 
 
 class Matrix(Mapping):
@@ -162,6 +161,11 @@ class MatrixPlane(Mapping):
 
     def __setitem__(self, key, value):
         self.matrix[self.keygen(key)] = value
+
+    def __repr__(self):
+        output = "".join([repr(self[k]) for k in self])
+        return("\n".join(wrap(output, self.matrix.size)))
+
 
 
 @dataclass
