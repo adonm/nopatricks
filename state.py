@@ -142,6 +142,13 @@ class Matrix(Mapping):
     def would_be_grounded(self, p):
         return p.y == 0 or len([x for x in p.adjacent(self.size) if self[x].is_grounded()]) > 0
 
+    @property
+    def to_fill(self): # ordered list of next coord that model wants filled that would be grounded
+        coords = [k for k in self if self[k].is_model() and self[k].is_void()]
+        for c in coords:
+            if self.would_be_grounded(c):
+                return c
+
     def yplane(self, y):
         """ Returns a view into this matrix at a constant y """
         return MatrixPlane(self, y=y)
