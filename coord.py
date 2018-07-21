@@ -110,6 +110,9 @@ class Diff:
             n+=1 
         return n==1
 
+    def magnitude_sqrd(self):
+        return self.dx*self.dx + self.dy*self.dy + self.dz*self.dz
+
     def mlen(self):
         return sum(map(abs, astuple(self)))
 

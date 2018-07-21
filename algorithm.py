@@ -4,6 +4,8 @@ import commands
 from coord import Coord, diff, UP, DOWN, LEFT, RIGHT, FORWARD, BACK
 import sys
 import math
+import queue as Q
+import heapq
 
 def convex_hull(st):
     minx = st.R-1
@@ -69,25 +71,42 @@ def smove_path(st, bot, path):
         bot.smove(path[i] - path[i-1])
         st.step()
 
+class PriorityCoord(object):
+    def __init__(self, priority, coord):
+        self.priority = priority
+        self.coord = coord
+    def __lt__(self, other):
+        return self.priority < other.priority
+    def __str__(self):
+        return str(self.coord)
+    def __repr__(self):
+        return str(self.coord)
+
+        
 def shortest_path(st, bot, c):
     if bot.pos == c:
         return []
+    assert st.matrix[c].is_void()
     seen = set()
-    stack = []
+    q = Q.PriorityQueue()
 
     seen.add(bot.pos)
-    stack.append(bot.pos)
+    q.put(PriorityCoord((c-bot.pos).magnitude_sqrd(), bot.pos))
 
     table = {}
-
+    # print("searching short")
+    # print(bot.pos)
+    # print(c)
     found = False
-    while not found and len(stack)>0:
-        p = stack.pop()
+    while not found and not q.empty():
+        # print("while")
+        p = q.get().coord
+        # print(p)
         for n in p.adjacent(st.R):
             if n not in seen and st.matrix[n].is_void():
                 table[n] = p
                 seen.add(n)
-                stack.insert(0, n)
+                q.put(PriorityCoord((c-n).magnitude_sqrd(), n))
                 if n == c:
                     found = True
 
