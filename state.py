@@ -133,7 +133,7 @@ class Matrix(Mapping):
                     self.ground_adjacent(c)
 
     def would_be_grounded(self, p):
-        return len([x for x in p.adjacent(self.size) if self[x].is_grounded()]) > 0
+        return p.y == 0 or len([x for x in p.adjacent(self.size) if self[x].is_grounded()]) > 0
 
     def yplane(self, y):
         """ Returns a view into this matrix at a constant y """
@@ -286,13 +286,14 @@ class Bot(object): # nanobot
 
     def fill(self, nd):
         p = self.pos + nd
-        if self.state.matrix[p].is_void():
-            self.state.matrix[p].set_full()
-            if self.state.matrix.would_be_grounded(p):
-                self.state.matrix[p].set_grounded()
+        matrix = self.state.matrix
+        if matrix[p].is_void():
+            matrix[p].set_full()
+            if matrix.would_be_grounded(p):
+                matrix[p].set_grounded()
                 self.state.ground_adjacent(p)
             else:
-                self.state.matrix.ungrounded.add(p)
+                matrix.ungrounded.add(p)
             
             self.state.energy += 12
         else:
