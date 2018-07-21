@@ -13,21 +13,25 @@ def move(bot, diff):
         return bot.smove(coord.LongDiff(0, 0, max(-15, min(diff.dz, 15))))
 
 
-@dataclass
 class FillArea:
-    area: Area
-    targ: Coord=None  # TODO find nearest groundable square on construction
+    def __init__(self, area):
+        self.area = area
+        self.targ = area.anchor #TODO find nearest groundable square
 
     def step(self, brain, bot):
         if self.targ is None:
-            self.targ = self.area.plane.keygen(self.area.anchor)
-        diff = self.targ - bot.pos
+            #move to next layer
+            bot.smove(coord.LongDiff(0, brain.dir, 0))
+            return False
+        diff = self.area.plane.keygen(self.targ) - bot.pos
         if isinstance(diff, coord.NearDiff):
-            # self.targ = TODO neighbour of current targ
+            #print(f"fill {self.targ}")
             self.area.points.remove(self.targ)
+            self.targ = self.area.closest(self.targ)
             bot.fill(diff)
         else:
-            move(bot, (self.targ + coord.UP) - bot.pos)
+            # try to move to the spot above our target
+            move(bot, (self.area.plane.keygen(self.targ) + coord.LongDiff(0, brain.dir, 0)) - bot.pos)
         return True
 
 
@@ -39,7 +43,8 @@ class SpawnBot:
 
 @dataclass
 class HeadHome:
-    pass
+    def step(self, brain, bot):
+        return False
 
 
 class ScanBrain:
@@ -59,9 +64,12 @@ class ScanBrain:
 
     def plan(self):
         assert self.num_jobs() == 0
-        pts_limit = self.state.R * self.state.R / 20.0 / 2.0
-        areas = scan(self.state.matrix.yplane(self.y), self.prev_ground, pts_limit)
-        print(f"Found {len(areas)} area(s)\n" + "\n".join(map(repr, areas)))
+        pts_limit = 999999 #self.state.R * self.state.R / 20.0 / 2.0
+        plane = self.state.matrix.yplane(self.y)
+        areas = scan(plane, self.prev_ground, pts_limit)
+        print(f"Found {len(areas)} area(s) @ y={self.y}\n" + "\n".join(map(repr, areas)))
+        if len(areas) == 0 and sum([int(v.is_model()) for v in plane.values()]) == 0:
+            self.dir = -self.dir
         #if len(areas) > 20:
         #    raise Exception("TODO merge areas together")
         #TODO fission if more bots required
@@ -77,11 +85,12 @@ class ScanBrain:
         if self.num_jobs() == 0:
             self.plan()
 
-        if any([self.step_bot(bot) for bot in self.state.bots]):
+        if any([self.step_bot(bot) for bot in self.state.bots]) or self.num_jobs() != 0:
             return True
 
         # no bots are busy; what's next?
-        if self.state.matrix.num_full == self.state.matrix.num_modelled:
+        print(f"filled {self.state.matrix.nfull} / {self.state.matrix.num_modelled}")
+        if self.state.matrix.nfull == self.state.matrix.nmodel:
             if self.ready_to_halt():
                 return False
             for i in range(1, 21):
@@ -92,11 +101,13 @@ class ScanBrain:
             if not self.state.matrix.in_range(self.y):
                 self.dir = -self.dir
                 self.y = prevy + self.dir
+            print(f"move to y={self.y}")
             self.prev_ground = lambda k: self.state.matrix.yplane(prevy)[k].is_grounded()
+            print(f"{self.state.matrix.yplane(prevy)}")
         return True
 
 
-    def ready_to_halt():
+    def ready_to_halt(self):
         return len(self.state.bots) == 1 and self.state.bots[0].pos == Coord(0, 0, 0) \
                 and self.state.harmonics == False
 
@@ -108,7 +119,7 @@ class ScanBrain:
                 more_work = self.active[id].step(self, bot)
                 if not more_work:
                     del self.active[id]
-                return True
+                return more_work
         bot.wait()
         return False
 
@@ -121,8 +132,14 @@ if __name__ == '__main__':
         pass
     st = state.State.create(problem=prob)
     brain = ScanBrain(st)
+    i = 1500
     while brain.step():
-        pass
+        st.step()
+        i -= 1
+        if i == 0:
+            break
+
+    print(st)
 
     with open("test%03d.nbt" % prob, "wb") as file:
         file.write(commands.export_nbt(st.trace))

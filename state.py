@@ -291,10 +291,12 @@ class Bot(object): # nanobot
         self.state.trace.append( commands.Fission().set_nd( nd.dx, nd.dy, nd.dz ).set_m( m ) )
 
     def fusionp(self, nd):
+        # note: energy accounted for in State.step
         self.primary_fuse_bots.append((self, self.pos+nd))
         self.state.trace.append( commands.FusionP().set_nd( nd.dx, nd.dy, nd.dz ) )
 
     def fusions(self, nd):
+        # note: energy accounted for in State.step
         self.secondary_fuse_bots.append((self, self.pos+nd))
         self.state.trace.append( commands.FusionS().set_nd( nd.dx, nd.dy, nd.dz ) )
 
