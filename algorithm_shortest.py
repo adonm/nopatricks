@@ -14,9 +14,21 @@ def shortest_path_algo(st):
     minPt = 0
 
     while not st.is_model_finished():
-        pt = st.matrix.fill_next(bot.pos + DOWN)
+        j = None	
+        while st.matrix[pts[minPt]].is_full() or not st.matrix[pts[minPt]].is_model():	
+            minPt += 1	
+	
+        for i in range(minPt, len(pts)):	
+            if st.matrix[pts[i]].is_void() and st.matrix[pts[i]].is_model() and st.matrix.would_be_grounded(pts[i]):	
+                j = i	
+                break	
+        if j is None:	
+            break	
+	
+        # print(pts[j])	
+        pt = pts[j]
         for a in pt.adjacent(st.R):
-            print(a)
+            # print(a)
             if st.matrix[a].is_void():
                 path = shortest_path(st, st.bots[0], a)
                 # print(path)
@@ -25,7 +37,6 @@ def shortest_path_algo(st):
                     # print(st.bots[0].pos)
                     bot.fill(pt - a)
                     break
-            print("done")
         # break
 
 if __name__ == '__main__':
