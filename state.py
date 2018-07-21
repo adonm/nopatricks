@@ -170,7 +170,9 @@ class MatrixPlane(Mapping):
         self.matrix[self.keygen(key)] = value
 
     def asciigrid(self):
-        return wrap("".join([repr(self[k]) for k in self]), self.matrix.size)
+        grid = wrap("".join([repr(self[k]) for k in self]), self.matrix.size)
+        grid.reverse() # display bottom left as x=0,z=0
+        return grid
 
     def __repr__(self):
         return("\n".join(self.asciigrid()))
@@ -270,9 +272,11 @@ class Bot(object): # nanobot
 
     def __repr__(self):
         output = self.state.matrix.yplane(self.pos.y).asciigrid()
+        output.reverse()
         botrow = list(output[self.pos.x])
         botrow[self.pos.z] = "B"
         output[self.pos.x] = "".join(botrow)
+        output.reverse()
         output = ["Bot: {}, Seeds: {}\n".format(self.bid, self.seeds)] + output
         return("\n".join(output))
 
