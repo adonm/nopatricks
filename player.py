@@ -10,6 +10,7 @@ if __name__ == '__main__':
     if len( sys.argv ) > 1:
         problem = int( sys.argv[1], 0 )
     st = state.State.create(problem=problem)
+    st.enable_trace = False
     cmd = commands.read_nbt_iter( open('dfltTracesL/LA{:03d}.nbt'.format(problem), 'rb').read() )
     
     try:
@@ -44,3 +45,7 @@ if __name__ == '__main__':
         pass
     print( 'all done!' )
     print( st )
+
+    out = open('dfltEnergy/LA{:03d}'.format(problem), 'w')
+    out.write(str(st.energy))
+    out.close()
