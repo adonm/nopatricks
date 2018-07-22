@@ -7,7 +7,7 @@ from collections.abc import Mapping
 from textwrap import wrap
 import os
 import math
-from dataclasses import dataclass, astuple, field
+from dataclasses import dataclass, field
 import numpy as np
 
 class Voxel:
@@ -89,8 +89,6 @@ class Matrix(Mapping):
     def ngrounded(self):
         if not self._ngrounded:
             self._ngrounded = np.count_nonzero(self._ndarray & Voxel.GROUNDED)
-        if self._ngrounded % 100 == 0: # status output
-            print(self._ngrounded)
         return self._ngrounded
 
     @staticmethod
@@ -156,23 +154,23 @@ class Matrix(Mapping):
                 stack.append(v)
     
     def toggle_bot(self, c):
-        self._ndarray[astuple(c)] ^= Voxel.BOT
+        self._ndarray[(c.x, c.y, c.z)] ^= Voxel.BOT
 
     def set_grounded(self, c):
-        self._ndarray[astuple(c)] |= Voxel.GROUNDED
+        self._ndarray[(c.x, c.y, c.z)] |= Voxel.GROUNDED
         self._ngrounded = None # invalidate cache
 
     def set_full(self, c1, c2=None):
         # fill a voxel or a region
         if not c2:
-            assert not (self[c1].val & Voxel.FULL)
-            self._ndarray[astuple(c1)] |= Voxel.FULL
+            assert not (self._ndarray[(c1.x, c1.y, c1.z)] & Voxel.FULL)
+            self._ndarray[(c1.x, c1.y, c1.z)] |= Voxel.FULL
         else:
             pass # todo fill region
         self._nfull = None # invalidate cache
 
     def would_be_grounded(self, p):
-        return p.y == 0 or len([x for x in p.adjacent(self.size) if self[x].is_grounded()]) > 0
+        return p[1] == 0 or len([n for n in p.adjacent(self.size) if self._ndarray[(n.x,n.y,n.z)] & Voxel.GROUNDED]) > 0
 
     def to_fill(self):
         if self.model_pts is None:

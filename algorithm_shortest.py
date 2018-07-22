@@ -54,9 +54,6 @@ def shortest_path_algo(st):
     bot = st.bots[0]
     bot.smove(UP)
     
-    pts = list(st.matrix.keys())
-    minPt = 0
-
     while not st.is_model_finished():
         pt = next_best_point(st)
         for a in pt.adjacent(st.R):
@@ -76,7 +73,8 @@ def shortest_path_algo(st):
 if __name__ == '__main__':
     problem = int(sys.argv[1])
     st = state.State.create(problem=problem)
-    shortest_path_algo(st)
+    import cProfile
+    cProfile.run('shortest_path_algo(st)', sort="calls")
     back_to_base(st, st.bots[0])
     st.bots[0].halt()
     st.step()
