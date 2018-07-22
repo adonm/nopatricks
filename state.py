@@ -9,6 +9,7 @@ import os
 import math
 from dataclasses import dataclass, field
 import numpy as np
+from enum import Enum
 
 class Voxel:
     """ Voxel represents mutable location information """
@@ -310,28 +311,70 @@ class State(object):
 def default_seeds():
     return list(range(2,41))
 
+class Actions(Enum) = {
+    HALT = 0,
+
+}
+
 @dataclass
-class Bot(object): # nanobot
+class BotOld(object): # nanobot
     state: State
     bid: int = 1
     pos: Coord = Coord(0,0,0)
     seeds: list = field(default_factory = default_seeds)
+    actions: list
 
     def halt(self):
+        self.actions.append(lambda _ : self._halt())
+    
+    def wait(self):
+        self.actions.append(lambda _ : self._wait())
+
+    def flip(self):
+        self.actions.append(lambda _ : self._flip())
+
+    def smove(self, diff):
+        self.actions.append(lambda _ : self._smove(diff))
+
+    def lmove(self, diff1, diff2):
+        self.actions.append(lambda _ : self._lmove(diff1, diff2))
+    
+    def fission(self, nd, m):
+        self.actions.append(lambda _ : self._fission(nd, m))
+
+    def fusionp(self, nd):
+        self.actions.append(lambda _ : self._fusionp(nd))
+
+    def fusions(self, nd):
+        self.actions.append(lambda _ : self._fusions(nd))
+
+    def fill(self, nd):
+        self.actions.append(lambda _ : self._fill(nd))
+
+    def void(self, nd):
+        self.actions.append(lambda _ : self._void(nd))
+
+    def gfill(self, nd, m):
+        self.actions.append(lambda _ : self._void(nd, m))
+
+    def gvoid(self, nd, m):
+        self.actions.append(lambda _ : self._void(nd, m))
+
+    def _halt(self):
         if len(self.state.bots) > 1:
             raise Exception("Can't halt with more than one bot")
         self.state.trace.append( commands.Halt() )
 
-    def wait(self):
+    def _wait(self):
         self.state.trace.append( commands.Wait() )
         pass
 
-    def flip(self):
+    def _flip(self):
         self.state.harmonics = not self.state.harmonics
         if self.state.enable_trace:
             self.state.trace.append( commands.Flip() )
 
-    def smove(self, diff):
+    def _smove(self, diff):
         dest = self.pos + diff
         if not self.state.matrix[dest].is_void():
             raise RuntimeError('tried to move to occupied point {} at time {}'.format(dest, self.state.step_id))
@@ -342,7 +385,7 @@ class Bot(object): # nanobot
         if self.state.enable_trace:
             self.state.trace.append( commands.SMove().set_lld( diff.dx, diff.dy, diff.dz ) )
 
-    def lmove(self, diff1, diff2):
+    def _lmove(self, diff1, diff2):
         dest = self.pos + diff1 + diff2
         if not self.state.matrix[dest].is_void():
             raise RuntimeError('tried to move to occupied point {} at time {}'.format(dest, self.state.step_id))
@@ -353,7 +396,7 @@ class Bot(object): # nanobot
         if self.state.enable_trace:
             self.state.trace.append( commands.LMove().set_sld1( diff1.dx, diff1.dy, diff1.dz ).set_sld2( diff2.dx, diff2.dy, diff2.dz ) )
 
-    def fission(self, nd, m):
+    def _fission(self, nd, m):
         f = Bot(self.state, self.seeds[0], self.pos + nd, self.seeds[1:m+2])
         self.state.matrix.toggle_bot(self.pos + nd) # enter voxel
         self.seeds = self.seeds[m+2:]
@@ -362,19 +405,19 @@ class Bot(object): # nanobot
         if self.state.enable_trace:
             self.state.trace.append( commands.Fission().set_nd( nd.dx, nd.dy, nd.dz ).set_m( m ) )
 
-    def fusionp(self, nd):
+    def _fusionp(self, nd):
         # note: energy accounted for in State.step
         self.primary_fuse_bots.append((self, self.pos+nd))
         if self.state.enable_trace:
             self.state.trace.append( commands.FusionP().set_nd( nd.dx, nd.dy, nd.dz ) )
 
-    def fusions(self, nd):
+    def _fusions(self, nd):
         # note: energy accounted for in State.step
         self.secondary_fuse_bots.append((self, self.pos+nd))
         if self.state.enable_trace:
             self.state.trace.append( commands.FusionS().set_nd( nd.dx, nd.dy, nd.dz ) )
 
-    def fill(self, nd):
+    def _fill(self, nd):
         p = self.pos + nd
         matrix = self.state.matrix
         if matrix[p].is_void():
@@ -393,17 +436,156 @@ class Bot(object): # nanobot
         if self.state.enable_trace:
             self.state.trace.append( commands.Fill().set_nd( nd.dx, nd.dy, nd.dz ) )
 
-    def void(self, nd):
+    def _void(self, nd):
         print('FIXME: Bot.void()')
         if self.state.enable_trace:
             self.state.trace.append( commands.Void().set_nd( nd.dx, nd.dy, nd.dz ) )
 
-    def gfill(self, nd, fd):
+    def _gfill(self, nd, fd):
         print('FIXME: Bot.gfill()')
         if self.state.enable_trace:
             self.state.trace.append( commands.GFill().set_nd( nd.dx, nd.dy, nd.dz ).set_fd( fd.dx, fd.dy, fd.dz ) )
 
-    def gvoid(self, nd, fd):
+    def _gvoid(self, nd, fd):
+        print('FIXME: Bot.gvoid()')
+        if self.state.enable_trace:
+            self.state.trace.append( commands.GVoid().set_nd( nd.dx, nd.dy, nd.dz ).set_fd( fd.dx, fd.dy, fd.dz ) )
+
+    def __repr__(self):
+        return "Bot: {}, Seeds: {}\n\n{}".format(self.bid, self.seeds, repr(self.state.matrix._ndarray[:, self.pos.y, :]))
+
+
+@dataclass
+class Bot(object): # nanobot
+    state: State
+    bid: int = 1
+    pos: Coord = Coord(0,0,0)
+    seeds: list = field(default_factory = default_seeds)
+    actions: list
+
+    def halt(self):
+        self.actions.append(lambda _ : self._halt())
+    
+    def wait(self):
+        self.actions.append(lambda _ : self._wait())
+
+    def flip(self):
+        self.actions.append(lambda _ : self._flip())
+
+    def smove(self, diff):
+        self.actions.append(lambda _ : self._smove(diff))
+
+    def lmove(self, diff1, diff2):
+        self.actions.append(lambda _ : self._lmove(diff1, diff2))
+    
+    def fission(self, nd, m):
+        self.actions.append(lambda _ : self._fission(nd, m))
+
+    def fusionp(self, nd):
+        self.actions.append(lambda _ : self._fusionp(nd))
+
+    def fusions(self, nd):
+        self.actions.append(lambda _ : self._fusions(nd))
+
+    def fill(self, nd):
+        self.actions.append(lambda _ : self._fill(nd))
+
+    def void(self, nd):
+        self.actions.append(lambda _ : self._void(nd))
+
+    def gfill(self, nd, m):
+        self.actions.append(lambda _ : self._void(nd, m))
+
+    def gvoid(self, nd, m):
+        self.actions.append(lambda _ : self._void(nd, m))
+
+    def _halt(self):
+        if len(self.state.bots) > 1:
+            raise Exception("Can't halt with more than one bot")
+        self.state.trace.append( commands.Halt() )
+
+    def _wait(self):
+        self.state.trace.append( commands.Wait() )
+        pass
+
+    def _flip(self):
+        self.state.harmonics = not self.state.harmonics
+        if self.state.enable_trace:
+            self.state.trace.append( commands.Flip() )
+
+    def _smove(self, diff):
+        dest = self.pos + diff
+        if not self.state.matrix[dest].is_void():
+            raise RuntimeError('tried to move to occupied point {} at time {}'.format(dest, self.state.step_id))
+        self.state.matrix.toggle_bot(self.pos) # leave voxel
+        self.state.matrix.toggle_bot(dest) # enter voxel
+        self.pos = dest
+        self.state.energy += 2 * diff.mlen()
+        if self.state.enable_trace:
+            self.state.trace.append( commands.SMove().set_lld( diff.dx, diff.dy, diff.dz ) )
+
+    def _lmove(self, diff1, diff2):
+        dest = self.pos + diff1 + diff2
+        if not self.state.matrix[dest].is_void():
+            raise RuntimeError('tried to move to occupied point {} at time {}'.format(dest, self.state.step_id))
+        self.state.matrix.toggle_bot(self.pos) # leave voxel
+        self.state.matrix.toggle_bot(dest) # enter voxel
+        self.pos = dest
+        self.state.energy += 2 * (diff1.mlen() + 2 + diff2.mlen())
+        if self.state.enable_trace:
+            self.state.trace.append( commands.LMove().set_sld1( diff1.dx, diff1.dy, diff1.dz ).set_sld2( diff2.dx, diff2.dy, diff2.dz ) )
+
+    def _fission(self, nd, m):
+        f = Bot(self.state, self.seeds[0], self.pos + nd, self.seeds[1:m+2])
+        self.state.matrix.toggle_bot(self.pos + nd) # enter voxel
+        self.seeds = self.seeds[m+2:]
+        self.state.bots_to_add.append(f)
+        self.state.energy += 24
+        if self.state.enable_trace:
+            self.state.trace.append( commands.Fission().set_nd( nd.dx, nd.dy, nd.dz ).set_m( m ) )
+
+    def _fusionp(self, nd):
+        # note: energy accounted for in State.step
+        self.primary_fuse_bots.append((self, self.pos+nd))
+        if self.state.enable_trace:
+            self.state.trace.append( commands.FusionP().set_nd( nd.dx, nd.dy, nd.dz ) )
+
+    def _fusions(self, nd):
+        # note: energy accounted for in State.step
+        self.secondary_fuse_bots.append((self, self.pos+nd))
+        if self.state.enable_trace:
+            self.state.trace.append( commands.FusionS().set_nd( nd.dx, nd.dy, nd.dz ) )
+
+    def _fill(self, nd):
+        p = self.pos + nd
+        matrix = self.state.matrix
+        if matrix[p].is_void():
+            if matrix.would_be_grounded(p):
+                self.state.matrix.set_grounded(p)
+                matrix.ground_adjacent(p)
+            elif self.state.harmonics:
+                matrix.ungrounded.add(p)
+            else:
+                raise RuntimeError('tried to fill ungrounded point {} at time {}'.format(p, self.state.step_id))
+            matrix.set_full(p)
+            
+            self.state.energy += 12
+        else:
+            self.state.energy += 6
+        if self.state.enable_trace:
+            self.state.trace.append( commands.Fill().set_nd( nd.dx, nd.dy, nd.dz ) )
+
+    def _void(self, nd):
+        print('FIXME: Bot.void()')
+        if self.state.enable_trace:
+            self.state.trace.append( commands.Void().set_nd( nd.dx, nd.dy, nd.dz ) )
+
+    def _gfill(self, nd, fd):
+        print('FIXME: Bot.gfill()')
+        if self.state.enable_trace:
+            self.state.trace.append( commands.GFill().set_nd( nd.dx, nd.dy, nd.dz ).set_fd( fd.dx, fd.dy, fd.dz ) )
+
+    def _gvoid(self, nd, fd):
         print('FIXME: Bot.gvoid()')
         if self.state.enable_trace:
             self.state.trace.append( commands.GVoid().set_nd( nd.dx, nd.dy, nd.dz ).set_fd( fd.dx, fd.dy, fd.dz ) )
