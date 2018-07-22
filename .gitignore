@@ -1,8 +1,8 @@
+submission-backup/
 submission*.zip
 test*.nbt
 test/
 dfltEnergy/
-submission/
 .vscode/
 # Byte-compiled / optimized / DLL files
 __pycache__/

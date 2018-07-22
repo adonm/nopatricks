@@ -5,87 +5,148 @@ from coord import Coord, diff, UP, DOWN, LEFT, RIGHT, FORWARD, BACK
 import sys, os
 import math
 from algorithm import *
+import numpy as np
+from math import floor, ceil
+import cProfile
 
-pts = None
-minPt = 0
+def next_best_point(st, bot=None):
+    minX = bot.region["minX"]
+    maxX = bot.region["maxX"]
+    minZ = bot.region["minZ"]
+    maxZ = bot.region["maxZ"]
+    # print(bot.region)
 
-def next_best_point(st):
-    global pts
-    global minPt
-    if pts is None:
-        pts = list(st.matrix.keys())
-    j = None	
-    while st.matrix[pts[minPt]].is_full() or not st.matrix[pts[minPt]].is_model():	
-        minPt += 1	
+    for y, x, z in np.transpose(np.where(np.transpose(st.matrix._ndarray, (1, 0, 2)) == state.Voxel.MODEL)):
+        if minX <= x < maxX and minZ <= z < maxZ:
+            coord = Coord(int(x), int(y), int(z))
+            if st.matrix.would_be_grounded(coord):
+                # print(coord)
+                return coord
+    return None
 
-    for i in range(minPt, len(pts)):	
-        if st.matrix[pts[i]].is_void() and st.matrix[pts[i]].is_model() and st.matrix.would_be_grounded(pts[i]):	
-            j = i	
-            break	
-    if j is None:	
-        return None
-    return pts[j]
-
-zcoords = []
-def closest_best_point(st):
-    bot = st.bots[0]
-    global zcoords
-    print("closest best pt")
-    if len(zcoords) == 0:
-        zcoords = st.matrix.fill_next(bot.pos + DOWN)
-        zcoords.reverse()
-    pt = zcoords.pop()
-    print("pt ofund")
-    return pt
-
-def fill_neighbours(st, bot):
+def fill(st, bot, dir):
     pts = [
-        bot.pos + DOWN + LEFT,
-        bot.pos + DOWN + RIGHT,
-        bot.pos + DOWN + FORWARD,
-        bot.pos + DOWN + BACK
+        bot.pos + dir,
+        bot.pos + dir + FORWARD,
+        bot.pos + dir + BACK
     ]
     for pt in pts:
-        
-        if st.matrix.is_valid_point(pt) and st.matrix.would_be_grounded(pt) and st.matrix[pt].is_void() and st.matrix[pt].is_model():
+        if st.matrix.is_valid_point(pt) and st.matrix.would_be_grounded(pt) and st.matrix._ndarray[pt.x, pt.y, pt.z] == state.Voxel.MODEL and (pt - bot.pos).mlen()==1:
             bot.fill(pt - bot.pos)
+
+def solve(st):
+    n = 0
+    while not st.is_model_finished():
+
+        for bot in st.bots:
+            # print(bot)
+            # n+=1
+            # if n>1000:
+            #     return
+            # pt = next_best_point(st, bot)
+            pt = st.matrix.fill_next(bot)
+            # print(bot.pos)
+            # print("pt")
+            # print(pt)
+            # print("")
+            if pt is not None:
+                if (pt - bot.pos).mlen() == 1:
+                    # print("filling")
+                    fill(st, bot, pt - bot.pos)
+                else:
+                    for a in pt.adjacent(st.R):
+                        if st.matrix[a].is_void():
+                            path = shortest_path(st, bot, a)
+                            # if len(path) > 10:
+                            #     print(path)
+                            # print("path")
+                            # print([b.pos for b in st.bots])
+                            # print(path)
+                            if path is not None:
+                                # print("got path")
+                                compress(st, bot, path)
+                            elif len(bot.actions)==0:
+                                fill(st, bot, pt - a)
+                            break
+            else:
+                # print("back to base")
+                back_to_base(st, bot)
+
+        while any(len(bot.actions)>0 for bot in st.bots):
+            # for bot in st.bots:
+            #     print(bot.pos)
+                # if len(bot.actions)>0:
+                #     print(bot.actions[0])
+            # print("stepping")
+            st.step()
+
 
 def shortest_path_algo(st):
     bot = st.bots[0]
     bot.smove(UP)
-    
-    pts = list(st.matrix.keys())
-    minPt = 0
 
-    while not st.is_model_finished():
-        pt = next_best_point(st)
-        for a in pt.adjacent(st.R):
-            # print(a)
+    minX, maxX, minY, maxY, minZ, maxZ = st.matrix.bounds
+    depth = maxZ - minZ
+    split = 3
+    nbots = ceil(depth / split)
+    print("nbots: "+str(nbots))
+    region = []
+    for i in range(nbots):
+        region.append({
+            "minX": minX,
+            "maxX": maxX,
+            "minY": minY,
+            "maxY": maxY,
+            "minZ": minZ + i * split,
+            "maxZ": min([maxZ, minZ + (i+1) * split])+1
+        })
+    # print(region)
+    # print(convex_hull(st))
+    # print(st.matrix.bounds)
+    st.step_all()
+
+    for i in range(1, nbots):
+        # print(st.bots[0].seeds)
+        st.bots[0].fission(FORWARD, 1)
+        st.step_all()
+        for j in range(region[nbots-i]["minZ"]):
+            st.bots[i].smove(FORWARD)
+        st.step_all()
+    for i in range(nbots):
+        st.bots[i].region = region[i]
+
+    solve(st)
+    print("finished solve")
+
+    st.step_all()
+
+    for bot2 in st.bots[1:]:
+        for a in bot.pos.adjacent(st.R):
             if st.matrix[a].is_void():
-                path = shortest_path(st, st.bots[0], a)
-                # print(path)
+                path = shortest_path(st, bot2, a)
                 if path is not None:
-                    compress(st, st.bots[0], path)
-                    # print(st.bots[0].pos)
-                    bot.fill(pt - st.bots[0].pos)
-                    # fill_neighbours(st, st.bots[0])
+                    print("found path")
+                    compress(st, bot2, path)
                     break
-            # print("done")
-        # break
+        st.step_all()
+        bot.fusionp(bot2.pos - bot.pos)
+        bot2.fusions(bot.pos - bot2.pos)
+        st.step_all()
 
 if __name__ == '__main__':
     problem = int(sys.argv[1])
-    if not os.path.exists("submission/LA"+str(problem).zfill(3)+".nbt"):
-        st = state.State.create(problem=problem)
-        shortest_path_algo(st)
-        back_to_base(st, st.bots[0])
-        st.bots[0].halt()
-        st.step()
-            
-        print( st )
-        print( 'energy: {}, default: {}, score: {:0.3f}/{:0.3f}'.format( st.energy, st.default_energy, st.score, st.score_max ) )
-        data = commands.export_nbt( st.trace )
-        with open("submission/LA"+str(problem).zfill(3)+".nbt", "wb") as file:
-            file.write(data)
+    st = state.State.create(problem=problem)
+    cProfile.run("shortest_path_algo(st)", sort="cumulative")
+    # shortest_path_algo(st)
+    bot = st.bots[0]
+    back_to_base(st, bot)
+    bot.halt()
 
-    
+    while st.step():
+        pass
+
+    print( st )
+    print( 'energy: {}, default: {}, score: {:0.3f}/{:0.3f}'.format( st.energy, st.default_energy, st.score, st.score_max ) )
+    data = commands.export_nbt( st.trace )
+    with open("submission/FA"+str(problem).zfill(3)+".nbt", "wb") as file:
+        file.write(data)

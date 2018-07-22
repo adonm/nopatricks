@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-from dataclasses import dataclass, astuple
+from dataclasses import dataclass
 from enum import Enum
 
 class Axis(Enum):
@@ -8,7 +8,7 @@ class Axis(Enum):
     Z = 3
 
     def get(self, obj):
-        return astuple(obj)[self.value - 1]
+        return (obj.x, obj.y, obj.z)[self.value - 1]
 
 @dataclass
 class Coord:
@@ -32,32 +32,21 @@ class Coord:
         return 3
 
     def __getitem__(self, key):
-        return astuple(self)[key]
+        return (self.x, self.y, self.z)[key]
 
     def __repr__(self):
-        return astuple(self).__repr__()
+        return (self.x, self.y, self.z).__repr__()
 
-    def __hash__(self):
-        return hash(astuple(self))
-    
     def __hash__(self):
         return hash((self.x, self.y, self.z))
     
-    def in_matrix(self, R):
-        return self.x>=0 and self.y>=0 and self.z>=0 \
-            and self.x<R and self.y<R and self.z<R
-
     def adjacent(self, R):
-        diffs = [
-            Diff(1, 0, 0),
-            Diff(-1, 0, 0),
-            Diff(0, 1, 0),
-            Diff(0, -1, 0),
-            Diff(0, 0, 1),
-            Diff(0, 0, -1),
-        ]
-        adjs = [self.__add__(d) for d in diffs]
-        return [a for a in adjs if a.in_matrix(R)]
+        x,y,z = self.x,self.y,self.z
+        adjs = [Coord(x+1,y,z), Coord(x-1,y,z), Coord(x,y+1,z), Coord(x,y-1,z), Coord(x,y,z+1), Coord(x,y,z-1)]
+        if x>1 and y>1 and z>1 and x<R-1 and y<R-1 and z<R-1:
+            return adjs
+        else:
+            return [a for a in adjs if a.x>=0 and a.y>=0 and a.z>=0 and a.x<R and a.y<R and a.z<R]
     
     def near(self, R):
         diffs = []
@@ -110,14 +99,17 @@ class Diff:
             n+=1 
         return n==1
 
-    def magnitude_sqrd(self):
-        return self.dx*self.dx + self.dy*self.dy + self.dz*self.dz
+    def mul(self, m):
+        return diff(self.dx*m, self.dy*m, self.dz*m)
+
+    def div(self, m):
+        return diff(int(self.dx/m), int(self.dy/m), int(self.dz/m))
 
     def mlen(self):
-        return sum(map(abs, astuple(self)))
+        return sum(map(abs, (self.dx, self.dy, self.dz)))
 
     def clen(self):
-        return max(map(abs, astuple(self)))
+        return max(map(abs, (self.dx, self.dy, self.dz)))
 
     def __repr__(self):
         return f"<{self.dx}, {self.dy}, {self.dz}>"
@@ -169,9 +161,6 @@ class NearDiff(Diff):
 
     def __add__(self, d):
         return diff(self.dx + d.dx, self.dy + d.dy, self.dz + d.dz)
-
-    def mul(self, m):
-        return NearDiff(self.dx * m, self.dy * m, self.dz * m)
 
     def __neg__(self):
         return NearDiff(-self.dx, -self.dy, -self.dz)

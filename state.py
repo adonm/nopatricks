@@ -7,7 +7,9 @@ from collections.abc import Mapping
 from textwrap import wrap
 import os
 import math
-from dataclasses import dataclass, astuple, field
+from dataclasses import dataclass, field
+import numpy as np
+from enum import Enum
 
 class Voxel:
     """ Voxel represents mutable location information """
@@ -19,6 +21,8 @@ class Voxel:
     GROUNDED = 1 << 1
     # the model bit is on if this location forms part of the target model
     MODEL = 1 << 2
+    # the bot bit is on if this location has a bot at it
+    BOT = 1 << 3
 
 
     def __init__(self, val):
@@ -33,7 +37,7 @@ class Voxel:
 
     # access to state is via functions so the implementation is free to change
     def is_void(self):
-        return not self.val & Voxel.FULL
+        return not (self.is_full() or self.is_bot())
 
     def is_full(self):
         return self.val & Voxel.FULL
@@ -41,60 +45,90 @@ class Voxel:
     def is_grounded(self):
         return self.val & Voxel.GROUNDED
 
+    def is_bot(self):
+        return self.val & Voxel.BOT
+
     def is_model(self):
         return self.val & Voxel.MODEL
 
     def __repr__(self):
-        return hex(self.val)[2] # just display first 4 bits in mask as hex
+        return repr(self.val)
 
 
 class Matrix(Mapping):
+    _nfull = None
+    _nmodel = None
+    _ngrounded = None
+    _bounds = None
     """ Matrix(size=R) initialises an empty matrix
         Matrix(problem=N) loads problem N
         Matrix(filename="foo.mdl") loads model file"""
 
     def __init__(self, **kwargs):
         self.ungrounded = set()
-        self.ngrounded = 0
-        self.nfull = 0
         self.model_pts = None
         if 'size' in kwargs:
             self.size = kwargs['size']
-            self.state = [Voxel.empty() for i in range(self.size ** 3)]
+            self._ndarray.flat = np.zeros(shape=(size, size, size), dtype=np.dtype('u1'))
         elif 'filename' in kwargs:
-            self.size, self.state = Matrix._load_file(kwargs['filename'])
+            self.size, self._ndarray = Matrix._load_file(kwargs['filename'])
         else:
-            self.size, self.state = Matrix._load_prob(kwargs.get('problem', 1))
-        
-        self.nmodel = len([v for v in self.state if v.is_model()])
-
-    def is_valid_point(self, pt):
-        return pt.x>0 and pt.y>0 and pt.z>0 and pt.x<self.size and pt.y<self.size and pt.z<self.size
+            self.size, self._ndarray = Matrix._load_prob(kwargs.get('problem', 1))
 
     @property
-    def num_modelled(self):
-        return len([v for v in self.state if v.is_model()])
+    def bounds(self):
+        if not self._bounds:
+            mcoords = np.where(self._ndarray & Voxel.MODEL)
+            self._bounds = (
+                min(mcoords[0]), max(mcoords[0])+1,
+                min(mcoords[1]), max(mcoords[1])+1,
+                min(mcoords[2]), max(mcoords[2])+1
+            )
+        return self._bounds
+
+    @property
+    def nfull(self):
+        if not self._nfull:
+            self._nfull = np.count_nonzero(self._ndarray & Voxel.FULL)
+        return self._nfull
+
+    @property
+    def nmodel(self):
+        if not self._nmodel:
+            self._nmodel = np.count_nonzero(self._ndarray & Voxel.MODEL)
+        return self._nmodel
+
+    @property
+    def ngrounded(self):
+        if not self._ngrounded:
+            self._ngrounded = np.count_nonzero(self._ndarray & Voxel.GROUNDED)
+        return self._ngrounded
 
     @staticmethod
     def _load_prob(num):
-        return Matrix._load_file("problemsL/LA%03d_tgt.mdl" % num)
+        return Matrix._load_file("problemsF/FA%03d_tgt.mdl" % num)
 
     @staticmethod
     def _load_file(filename):
         with open(filename, 'rb') as fb:
             bytedata = fb.read()
             size = int(bytedata[0])
-            state = []
+            ndarray = np.zeros(shape=(size, size, size), dtype=np.dtype('u1'))
+            index = 0
             for byte in bytedata[1:]:
                 for bit in to_uint64_le( unpack_bits( byte ) ):
-                    state.append(Voxel.empty(bit))
-            return size, state
+                    ndarray.flat[index] = Voxel.empty(bit).val
+                    index += 1
+            return size, ndarray
+
+    def is_valid_point(self, coord):
+        return (0 <= coord.x < self.size) and (0 <= coord.y < self.size) and (0 <= coord.z < self.size)
 
     def coord_index(self, coord):
         if not isinstance(coord, Coord):
             raise TypeError()
-        assert (0 <= coord.x < self.size) and (0 <= coord.y < self.size) and (0 <= coord.z < self.size)
-        return coord.x * self.size * self.size + coord.y * self.size + coord.z
+        assert self.is_valid_point(coord)
+        return (coord.x, coord.y, coord.z)
 
     def in_range(self, val):
         if isinstance(val, int):
@@ -117,10 +151,10 @@ class Matrix(Mapping):
         return self.size ** 3
 
     def __getitem__(self, key):
-        return self.state[self.coord_index(key)]
+        return Voxel(self._ndarray[self.coord_index(key)])
 
-    def __setitem__(self, key, value):
-        self.state[self.coord_index(key)] = value
+    def __setitem__(self, key, voxel):
+        self._ndarray[self.coord_index(key)] = voxel.val
 
     def ground_adjacent(self, gc):
         stack = [gc]
@@ -131,59 +165,66 @@ class Matrix(Mapping):
                 if v in self.ungrounded:
                     self.ungrounded.remove(v)
                 stack.append(v)
-    
-    def set_grounded(self, c):
-        v = self[c]
-        v.val |= Voxel.GROUNDED
-        self.ngrounded += 1
 
-    def set_full(self, c):
-        v = self[c]
-        assert not (v.val & Voxel.FULL)
-        v.val |= Voxel.FULL
-        self.nfull += 1
+    def toggle_bot(self, c):
+        self._ndarray[(c.x, c.y, c.z)] ^= Voxel.BOT
+
+    def set_grounded(self, c):
+        self._ndarray[(c.x, c.y, c.z)] |= Voxel.GROUNDED
+        self._ngrounded = None # invalidate cache
+
+    def set_full(self, c1, c2=None):
+        # fill a voxel or a region
+        if not c2:
+            assert not (self._ndarray[(c1.x, c1.y, c1.z)] & Voxel.FULL)
+            self._ndarray[(c1.x, c1.y, c1.z)] |= Voxel.FULL
+        else:
+            pass # todo fill region
+        self._nfull = None # invalidate cache
 
     def would_be_grounded(self, p):
-        return p.y == 0 or len([x for x in p.adjacent(self.size) if self[x].is_grounded()]) > 0
+        if self[p].val & Voxel.BOT:
+            return False
+        return p.y == 0 or len([n for n in p.adjacent(self.size) if self._ndarray[(n.x,n.y,n.z)] & Voxel.GROUNDED]) > 0
 
     def to_fill(self):
-        if self.model_pts is None:
-            self.model_pts = [k for k in self if self[k].is_model()]
-        return [x for x in self.model_pts if self[x].is_void()]
-        
-    def fill_next(self, nearc=None): # ordered list of next coord that model wants filled that would be grounded
-        coords = self.to_fill()
-        if nearc: # sort coords by distance from nearc
-            coords.sort(key=lambda c: (c-nearc).mlen() + self.size * abs(c.y - nearc.y))
-        x, y = None, None
-        zcoords = []
-        for c in coords:
-            if x and c.x != x and c.y != y:
-                continue
-            if self.would_be_grounded(c):
-                x, y = c.x, c.y
-                zcoords.append(c)
-        return zcoords
+        return [Coord(int(x), int(y), int(z)) for x,y,z in np.transpose(np.where(self._ndarray == Voxel.MODEL))]
+
+    def fill_next(self, bot=None):
+        if bot: # sort coords by distance from bot
+            if hasattr(bot, "pcache") and (bot.pcache["pos"] - bot.pos).mlen() < 20:
+                coords = bot.pcache["coords"]
+            else:
+                coords = self.to_fill()
+                coords.sort(key=lambda c: (c-bot.pos).mlen() + abs(c.y) * self.size)
+                bot.pcache = {"pos": bot.pos, "coords": coords}
+            minX = bot.region["minX"]
+            maxX = bot.region["maxX"]
+            minZ = bot.region["minZ"]
+            maxZ = bot.region["maxZ"]
+            for c in coords:
+                if minZ <= c.z < maxZ and minX <= c.z < maxX:
+                    if self._ndarray[c.x,c.y,c.z] == Voxel.MODEL and self.would_be_grounded(c):
+                        return c
+            else:
+                return None
+        return coords[0]
 
     def yplane(self, y):
         """ Returns a view into this matrix at a constant y """
-        return MatrixPlane(self, y=y)
+        return MatrixYPlane(self, y=y)
 
     def __repr__(self):
         return "size: {}, model/full/grounded: {}/{}/{}".format(self.size, self.nmodel, self.nfull, self.ngrounded)
 
 
-class MatrixPlane(Mapping):
-    def __init__(self, matrix, **kwargs):
+class MatrixYPlane(Mapping):
+    def __init__(self, matrix, y):
         self.matrix = matrix
-        if 'x' in kwargs:
-            self.keygen = lambda tup : Coord(kwargs['x'], tup[0], tup[1])
-        elif 'y' in kwargs:
-            self.keygen = lambda tup : Coord(tup[0], kwargs['y'], tup[1])
-        elif 'z' in kwargs:
-            self.keygen = lambda tup : Coord(tup[0], tup[1], kwargs['z'])
-        else:
-            raise ValueError("invalid plane")
+        self.y = y
+
+    def keygen(self, tup):
+        return Coord(tup[0], self.y, tup[1])
 
     def keys(self):
         for u in range(self.matrix.size):
@@ -202,13 +243,8 @@ class MatrixPlane(Mapping):
     def __setitem__(self, key, value):
         self.matrix[self.keygen(key)] = value
 
-    def asciigrid(self):
-        grid = wrap("".join([repr(self[k]) for k in self]), self.matrix.size)
-        grid.reverse() # display bottom left as x=0,z=0
-        return grid
-
     def __repr__(self):
-        return("\n".join(self.asciigrid()))
+        return repr(self.matrix._ndarray[:,self.y,:])
 
     def adjacent(self, key):
         deltas = [(-1, 0), (1, 0), (0, -1), (0, 1)]
@@ -228,6 +264,7 @@ class State(object):
     secondary_fuse_bots: list = field(default_factory = list)
     default_energy: int = 1
     enable_trace: bool = True
+    current_moves: set = field(default_factory = set)
 
     @property
     def R(self):
@@ -244,7 +281,9 @@ class State(object):
     @classmethod
     def create(cls, problem=1):
         self = cls(Matrix(problem=problem))
-        self.bots.append(Bot(state=self))
+        bot = Bot(state=self)
+        self.matrix.toggle_bot(bot.pos) # enter voxel
+        self.bots.append(bot)
         test = 'dfltEnergy/LA{:03d}'.format(problem)
         if os.path.isfile(test):
             self.default_energy = int(open(test, 'r').read(), 0)
@@ -257,26 +296,43 @@ class State(object):
         for b in self.bots:
             if b.bid == bid:
                 return b
-
+    def step_all(self):
+        while self.step():
+            pass
     def step(self):
+        # print("step")
+        self.current_moves=set()
+        if len([ bot for bot in self.bots if len(bot.actions) > 0 ]) == 0:
+            return False
+
+        for bot in self.bots:
+            if len(bot.actions)>0:
+                bot.actions.pop(0)()
+            else:
+                bot._wait()
+
         if self.harmonics == True:
             self.energy += 30 * self.R * self.R * self.R
         else:
             self.energy += 3 * self.R * self.R * self.R
-        
+
         self.energy += 20 * len(self.bots)
         self.step_id += 1
 
         for prim_bot, sec_pos in self.primary_fuse_bots:
+            found_fuse = False
             for i, (sec_bot, prim_pos) in enumerate(self.secondary_fuse_bots):
                 if prim_bot.pos == prim_pos and sec_bot.pos == sec_pos:
                     self.secondary_fuse_bots.pop(i)
                     prim_bot.seeds.append(sec_bot.bid)
                     prim_bot.seeds.extend(sec_bot.seeds)
+                    self.matrix.toggle_bot(sec_bot.pos) # leave voxel
                     self.bots.remove(sec_bot)
                     self.energy -= 24
+                    found_fuse=True
                     break
-            raise ValueError( 'missing secondary fusion match for {}'.format(prim_bot.bid) )
+            if not found_fuse:
+                raise ValueError( 'missing secondary fusion match for {}'.format(prim_bot.bid) )
         if self.secondary_fuse_bots:
             raise ValueError( 'missing primary fusion match for {}'.format(self.secondary_fuse_bots[0][0].bid) )
         self.primary_fuse_bots.clear()
@@ -284,13 +340,18 @@ class State(object):
         self.bots.extend(self.bots_to_add)
         self.bots_to_add.clear()
 
+        return True
 
     def __repr__(self):
         return 'step_id: {}, bots: {}, energy: {}, matrix: {}'.format(self.step_id, len( self.bots ), self.energy, repr(self.matrix))
 
 
 def default_seeds():
-    return list(range(2,21))
+    return list(range(2,41))
+
+class Actions(Enum):
+    HALT = 0
+
 
 @dataclass
 class Bot(object): # nanobot
@@ -298,61 +359,147 @@ class Bot(object): # nanobot
     bid: int = 1
     pos: Coord = Coord(0,0,0)
     seeds: list = field(default_factory = default_seeds)
+    actions: list = field(default_factory = list)
+    # region contains min/max for all coords
+    region: dict = field(default_factory = lambda: {
+        "minX": 0,
+        "maxX": 1000
+    })
 
-    def halt(self):
+    def __getattr__(self, name):
+        if not name.startswith("_") and hasattr(self, "_" + name):
+            fn = getattr(self, "_" + name)
+            def queuefn(*args, **kwargs):
+                self.actions.append(lambda: fn(*args, **kwargs))
+            return queuefn
+        else:
+            raise AttributeError
+
+    def _halt(self):
         if len(self.state.bots) > 1:
             raise Exception("Can't halt with more than one bot")
         self.state.trace.append( commands.Halt() )
 
-    def wait(self):
+    def _wait(self):
         self.state.trace.append( commands.Wait() )
         pass
 
-    def flip(self):
+    def _flip(self):
         self.state.harmonics = not self.state.harmonics
         if self.state.enable_trace:
             self.state.trace.append( commands.Flip() )
 
-    def smove(self, diff):
+    def _smove(self, diff):
+        # print("smove")
         dest = self.pos + diff
-        if not self.state.matrix[dest].is_void():
-            raise RuntimeError('tried to move to occupied point {} at time {}'.format(dest, self.state.step_id))
-        self.pos = dest
-        self.state.energy += 2 * diff.mlen()
-        if self.state.enable_trace:
-            self.state.trace.append( commands.SMove().set_lld( diff.dx, diff.dy, diff.dz ) )
 
-    def lmove(self, diff1, diff2):
+        if dest in self.state.current_moves:
+            self.actions = []
+            self._wait()
+            return
+
+        if not self.state.matrix[dest].is_void():
+            self.actions = []
+            self._wait()
+            # raise RuntimeError('tried to move to occupied point {} at time {}'.format(dest, self.state.step_id))
+        else:
+            self.state.current_moves.add(self.pos)
+            self.state.current_moves.add(dest)
+            self.state.matrix.toggle_bot(self.pos) # leave voxel
+            self.state.matrix.toggle_bot(dest) # enter voxel
+            self.pos = dest
+            self.state.energy += 2 * diff.mlen()
+            if self.state.enable_trace:
+                self.state.trace.append( commands.SMove().set_lld( diff.dx, diff.dy, diff.dz ) )
+
+    def get_lpath(self, diff1, diff2):
+        ps = []
+
+        dir1 = diff1.div(diff1.mlen())
+        dir2 = diff2.div(diff2.mlen())
+
+        for i in range(1, diff1.mlen()+1):
+            ps.append(self.pos + dir1.mul(i))
+        for i in range(1, diff2.mlen()+1):
+            ps.append(self.pos + diff1 + dir2.mul(i))
+        return ps
+
+    def _lmove(self, diff1, diff2):
         dest = self.pos + diff1 + diff2
-        if not self.state.matrix[dest].is_void():
-            raise RuntimeError('tried to move to occupied point {} at time {}'.format(dest, self.state.step_id))
-        self.pos = dest
-        self.state.energy += 2 * (diff1.mlen() + 2 + diff2.mlen())
-        if self.state.enable_trace:
-            self.state.trace.append( commands.LMove().set_sld1( diff1.dx, diff1.dy, diff1.dz ).set_sld2( diff2.dx, diff2.dy, diff2.dz ) )
+        # print("")
+        # print(self.pos)
+        # print(diff1)
+        # print(diff2)
+        # print(dest)
 
-    def fission(self, nd, m):
+        # print("lpath")
+        # print(self.pos)
+        # print(diff1)
+        # print(diff2)
+        # print(self.get_lpath(diff1, diff2))
+        # print([self.state.matrix[p].is_void() for p in self.get_lpath(diff1, diff2)])
+        # print([self.state.matrix[p].val for p in self.get_lpath(diff1, diff2)])
+        # print(not all( self.state.matrix[p].is_void() for p in self.get_lpath(diff1, diff2)))
+
+        moves = [p for p in self.get_lpath(diff1, diff2)]
+
+        for m in moves:
+            if m in self.state.current_moves:
+                print("can't lmvove interference")
+                # self._smove(UP.mul(self.bid))
+                self.actions = []
+                self._wait()
+                return
+
+
+        if not all(self.state.matrix[p].is_void() for p in self.get_lpath(diff1, diff2)):
+            self.actions = []
+            print("can't lmvove")
+            self.actions = []
+            # self._smove(UP.mul(self.bid))
+            self._wait()
+            # raise RuntimeError('tried to move to occupied point {} at time {}'.format(dest, self.state.step_id))
+        else:
+            self.state.current_moves.add(self.pos)
+            self.state.current_moves.update(moves)
+
+            self.state.matrix.toggle_bot(self.pos) # leave voxel
+            self.state.matrix.toggle_bot(dest) # enter voxel
+            self.pos = dest
+            self.state.energy += 2 * (diff1.mlen() + 2 + diff2.mlen())
+            if self.state.enable_trace:
+                self.state.trace.append( commands.LMove().set_sld1( diff1.dx, diff1.dy, diff1.dz ).set_sld2( diff2.dx, diff2.dy, diff2.dz ) )
+
+    def _fission(self, nd, m):
         f = Bot(self.state, self.seeds[0], self.pos + nd, self.seeds[1:m+2])
+        self.state.matrix.toggle_bot(self.pos + nd) # enter voxel
         self.seeds = self.seeds[m+2:]
         self.state.bots_to_add.append(f)
         self.state.energy += 24
         if self.state.enable_trace:
             self.state.trace.append( commands.Fission().set_nd( nd.dx, nd.dy, nd.dz ).set_m( m ) )
 
-    def fusionp(self, nd):
+    def _fusionp(self, nd):
         # note: energy accounted for in State.step
-        self.primary_fuse_bots.append((self, self.pos+nd))
+        self.state.primary_fuse_bots.append((self, self.pos+nd))
         if self.state.enable_trace:
             self.state.trace.append( commands.FusionP().set_nd( nd.dx, nd.dy, nd.dz ) )
 
-    def fusions(self, nd):
+    def _fusions(self, nd):
         # note: energy accounted for in State.step
-        self.secondary_fuse_bots.append((self, self.pos+nd))
+        self.state.secondary_fuse_bots.append((self, self.pos+nd))
         if self.state.enable_trace:
             self.state.trace.append( commands.FusionS().set_nd( nd.dx, nd.dy, nd.dz ) )
 
-    def fill(self, nd):
+    def _fill(self, nd):
+        # print("doing fill")
+        # print(self.pos)
+        # print(nd)
+
         p = self.pos + nd
+        if p in self.state.current_moves:
+            self._wait()
+            return
         matrix = self.state.matrix
         if matrix[p].is_void():
             if matrix.would_be_grounded(p):
@@ -361,25 +508,32 @@ class Bot(object): # nanobot
             elif self.state.harmonics:
                 matrix.ungrounded.add(p)
             else:
-                raise RuntimeError('tried to fill ungrounded point {} at time {}'.format(p, self.state.step_id))
+                self._wait()
+                return
+                # raise RuntimeError('tried to fill ungrounded point {} at time {}'.format(p, self.state.step_id))
+            self.state.current_moves.add(p)
             matrix.set_full(p)
-            
+
             self.state.energy += 12
         else:
             self.state.energy += 6
         if self.state.enable_trace:
             self.state.trace.append( commands.Fill().set_nd( nd.dx, nd.dy, nd.dz ) )
 
+    def _void(self, nd):
+        print('FIXME: Bot.void()')
+        if self.state.enable_trace:
+            self.state.trace.append( commands.Void().set_nd( nd.dx, nd.dy, nd.dz ) )
+
+    def _gfill(self, nd, fd):
+        print('FIXME: Bot.gfill()')
+        if self.state.enable_trace:
+            self.state.trace.append( commands.GFill().set_nd( nd.dx, nd.dy, nd.dz ).set_fd( fd.dx, fd.dy, fd.dz ) )
+
+    def _gvoid(self, nd, fd):
+        print('FIXME: Bot.gvoid()')
+        if self.state.enable_trace:
+            self.state.trace.append( commands.GVoid().set_nd( nd.dx, nd.dy, nd.dz ).set_fd( fd.dx, fd.dy, fd.dz ) )
+
     def __repr__(self):
-        output = self.state.matrix.yplane(self.pos.y).asciigrid()
-        output.reverse()
-        botrow = list(output[self.pos.x])
-        botrow[self.pos.z] = "B"
-        output[self.pos.x] = "".join(botrow)
-        output.reverse()
-        output = ["Bot: {}, Seeds: {}\n".format(self.bid, self.seeds)] + output
-        return("\n".join(output))
-
-        
-
-
+        return "Bot: {}, Seeds: {}\n\n{}".format(self.bid, self.seeds, repr(self.state.matrix._ndarray[:, self.pos.y, :]))

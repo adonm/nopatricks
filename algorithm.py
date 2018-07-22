@@ -10,6 +10,8 @@ import heapq
 def convex_hull(st):
     minx = st.R-1
     maxx = 0
+    miny = st.R-1
+    maxy = 0
     minz = st.R-1
     maxz = 0
     for y in range(st.R):
@@ -20,6 +22,10 @@ def convex_hull(st):
                         minx = x
                     if x > maxx:
                         maxx = x
+                    if y < miny:
+                        miny = y
+                    if y > maxy:
+                        maxy = y
                     if z < minz:
                         minz = z
                     if z > maxz:
@@ -27,6 +33,8 @@ def convex_hull(st):
     return {
         "minx": minx,
         "maxx": maxx,
+        "miny": miny,
+        "maxy": maxy,
         "minz": minz,
         "maxz": maxz,
     }
@@ -42,15 +50,15 @@ def next_move(st, bot, path):
     while k<len(path) and (path[k] - path[j]).is_manhatten():
         k += 1
     k -= 1
-    
+
     if i!=j and k!=j:
-        # print("lmove")
+        # print("next_mvoe lmove")
         # print(path[j] - path[i])
         # print(path[k] - path[j])
         bot.lmove(path[j] - path[i], path[k] - path[j])
         return k
     elif i+1<len(path):
-        # print("smove")
+        # print("next_mvoe smove")
         # print(path[i+1] - path[i])
         bot.smove(path[i+1] - path[i])
         return i+1
@@ -61,7 +69,6 @@ def compress(st, bot, path):
     i = 0
     while i < len(path):
         i = next_move(st, bot, path)
-        st.step()
         path = path[i:]
         # print(path)
         i = 0
@@ -69,7 +76,6 @@ def compress(st, bot, path):
 def smove_path(st, bot, path):
     for i in range(1, len(path)):
         bot.smove(path[i] - path[i-1])
-        st.step()
 
 class PriorityCoord(object):
     def __init__(self, priority, coord):
@@ -82,22 +88,29 @@ class PriorityCoord(object):
     def __repr__(self):
         return str(self.coord)
 
-        
+def pointcost(st, src, dest):
+    distance = (dest - src).mlen()
+    danger = 0
+    # for bot in st.bots:
+    #     danger -= (dest - bot.pos).mlen()
+    return distance - danger
+
 def shortest_path(st, bot, c):
     if bot.pos == c:
         return []
-    assert st.matrix[c].is_void()
+    # assert st.matrix[c].is_void()
     seen = set()
     q = Q.PriorityQueue()
 
     seen.add(bot.pos)
-    q.put(PriorityCoord((c-bot.pos).magnitude_sqrd(), bot.pos))
+    q.put(PriorityCoord(pointcost(st, bot.pos, c), bot.pos))
 
     table = {}
     # print("searching short")
     # print(bot.pos)
     # print(c)
     found = False
+    foundPt = c
     while not found and not q.empty():
         # print("while")
         p = q.get().coord
@@ -106,7 +119,7 @@ def shortest_path(st, bot, c):
             if n not in seen and st.matrix[n].is_void():
                 table[n] = p
                 seen.add(n)
-                q.put(PriorityCoord((c-n).magnitude_sqrd(), n))
+                q.put(PriorityCoord(pointcost(st, n, c), n))
                 if n == c:
                     found = True
 
@@ -114,16 +127,22 @@ def shortest_path(st, bot, c):
         return None
 
     path = []
-    x = c
+    x = foundPt
     while x != bot.pos:
+        assert st.matrix[x].is_void()
         path.append(x)
         x = table[x]
     path.append(bot.pos)
     return list(reversed(path))
 
 def back_to_base(st, bot):
-    compress(st, bot, shortest_path(st, bot, Coord(0,0,0)))
-    
+    base = Coord(0,0,bot.bid-1)
+    # if st.matrix[base].is_bot():
+    #     return
+    path = shortest_path(st, bot, base)
+    if path is not None:
+        compress(st, bot, path)
+
 def skip(bot, st, diff):
     jump = 1
     while jump < 16:
@@ -178,7 +197,7 @@ if __name__ == '__main__':
     back_to_base(st, st.bots[0])
     st.bots[0].halt()
     st.step()
-        
+
     print( st )
     filename = "submission/LA"+str(problem).zfill(3)+".nbt"
     sys.stderr.write('{}: {}\n'.format(filename, st.score) )
@@ -186,5 +205,3 @@ if __name__ == '__main__':
     data = commands.export_nbt( st.trace )
     with open(filename, "wb") as file:
         file.write(data)
-
-    
