@@ -39,7 +39,6 @@ def shortest_path_algo(st):
     bot.smove(UP)
     
     while not st.is_model_finished():
-        
         pt = next_best_point(st)
         for a in pt.adjacent(st.R):
             if st.matrix[a].is_void():
@@ -48,7 +47,9 @@ def shortest_path_algo(st):
                     compress(st, bot, path)
                 fill(st, bot, pt - a)
                 break
-
+                
+        while len(st.bots[0].actions) > 0:
+            st.step()
 
 if __name__ == '__main__':
     problem = int(sys.argv[1])
