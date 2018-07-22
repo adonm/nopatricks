@@ -81,7 +81,7 @@ def shortest_path_algo(st):
 
     minX, maxX, minY, maxY, minZ, maxZ = st.matrix.bounds
     depth = maxZ - minZ
-    split = 3
+    split = 2
     nbots = ceil(depth / split)
     region = []
     for i in range(nbots):
