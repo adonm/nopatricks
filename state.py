@@ -192,7 +192,7 @@ class Matrix(Mapping):
 
     def fill_next(self, bot=None):
         if bot: # sort coords by distance from bot
-            if hasattr(bot, "pcache") and (bot.pcache["pos"] - bot.pos).mlen() < 20:
+            if hasattr(bot, "pcache") and bot.pcache and (bot.pcache["pos"] - bot.pos).mlen() < 20:
                 coords = bot.pcache["coords"]
             else:
                 coords = self.to_fill()
@@ -211,6 +211,7 @@ class Matrix(Mapping):
                     if self._ndarray[c.x,c.y,c.z] == Voxel.MODEL and self.would_be_grounded(c):
                         return c
                 else:
+                    bot.pcache = None
                     return None
         return coords[0]
 

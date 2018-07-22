@@ -27,8 +27,8 @@ def next_best_point(st, bot=None):
 def fill(st, bot, dir):
     pts = [
         bot.pos + dir,
-        bot.pos + dir + FORWARD,
-        bot.pos + dir + BACK
+        bot.pos + dir + BACK,
+        bot.pos + dir + FORWARD
     ]
     for pt in pts:
         if st.matrix.is_valid_point(pt) and st.matrix.would_be_grounded(pt) and st.matrix._ndarray[pt.x, pt.y, pt.z] == state.Voxel.MODEL and (pt - bot.pos).mlen()==1:
@@ -55,19 +55,20 @@ def solve(st):
                     fill(st, bot, pt - bot.pos)
                 else:
                     for a in pt.adjacent(st.R):
-                        if st.matrix[a].is_void():
+                        if not st.matrix._ndarray[a.x,a.y,a.z] & (state.Voxel.BOT | state.Voxel.FULL):
+                            # print("path")
                             path = shortest_path(st, bot, a)
                             # if len(path) > 10:
                             #     print(path)
-                            # print("path")
                             # print([b.pos for b in st.bots])
-                            # print(path)
                             if path is not None:
                                 # print("got path")
                                 compress(st, bot, path)
                             elif len(bot.actions)==0:
                                 fill(st, bot, pt - a)
                             break
+                    else:
+                        print("bot at {} can't get to {} (no void adjacent)".format(bot.pos, pt))
             else:
                 # print("back to base")
                 back_to_base(st, bot)
