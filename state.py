@@ -207,7 +207,11 @@ class Matrix(Mapping):
                     if self._ndarray[c.x,c.y,c.z] == Voxel.MODEL and self.would_be_grounded(c):
                         return c
             else:
-                return None
+                for c in coords:
+                    if self._ndarray[c.x,c.y,c.z] == Voxel.MODEL and self.would_be_grounded(c):
+                        return c
+                else:
+                    return None
         return coords[0]
 
     def yplane(self, y):
