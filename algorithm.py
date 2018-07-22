@@ -102,6 +102,7 @@ def shortest_path(st, bot, c):
     # print(bot.pos)
     # print(c)
     found = False
+    foundPt = c
     while not found and not q.empty():
         # print("while")
         p = q.get().coord
@@ -118,7 +119,7 @@ def shortest_path(st, bot, c):
         return None
 
     path = []
-    x = c
+    x = foundPt
     while x != bot.pos:
         assert st.matrix[x].is_void()
         path.append(x)

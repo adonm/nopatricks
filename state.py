@@ -73,7 +73,7 @@ class Matrix(Mapping):
             self.size, self._ndarray = Matrix._load_file(kwargs['filename'])
         else:
             self.size, self._ndarray = Matrix._load_prob(kwargs.get('problem', 1))
-        
+
     @property
     def nfull(self):
         if not self._nfull:
@@ -153,7 +153,7 @@ class Matrix(Mapping):
                 if v in self.ungrounded:
                     self.ungrounded.remove(v)
                 stack.append(v)
-    
+
     def toggle_bot(self, c):
         self._ndarray[(c.x, c.y, c.z)] ^= Voxel.BOT
 
@@ -177,7 +177,7 @@ class Matrix(Mapping):
 
     def to_fill(self):
         return [Coord(int(x), int(y), int(z)) for x,y,z in np.transpose(np.where(self._ndarray == Voxel.MODEL))]
-        
+
     def fill_next(self, nearc=None): # ordered list of next coord that model wants filled that would be grounded
         coords = self.to_fill()
         if nearc: # sort coords by distance from nearc
@@ -278,8 +278,11 @@ class State(object):
         for b in self.bots:
             if b.bid == bid:
                 return b
-
+    def step_all(self):
+        while self.step():
+            pass
     def step(self):
+        # print("step")
         self.current_moves=[]
         if len([ bot for bot in self.bots if len(bot.actions) > 0 ]) == 0:
             return False
@@ -294,7 +297,7 @@ class State(object):
             self.energy += 30 * self.R * self.R * self.R
         else:
             self.energy += 3 * self.R * self.R * self.R
-        
+
         self.energy += 20 * len(self.bots)
         self.step_id += 1
 
@@ -407,7 +410,7 @@ class BotOld(object): # nanobot
             else:
                 raise RuntimeError('tried to fill ungrounded point {} at time {}'.format(p, self.state.step_id))
             matrix.set_full(p)
-            
+
             self.state.energy += 12
             if self.state.enable_trace:
                 self.state.trace.append( commands.Fill().set_nd( nd.dx, nd.dy, nd.dz ) )
@@ -521,7 +524,7 @@ class Bot(object): # nanobot
                 # self._smove(UP.mul(self.bid))
                 self._wait()
                 return
-        
+
         self.state.current_moves += moves
 
         if not all(self.state.matrix[p].is_void() for p in self.get_lpath(diff1, diff2)):
@@ -573,7 +576,7 @@ class Bot(object): # nanobot
                 return
                 # raise RuntimeError('tried to fill ungrounded point {} at time {}'.format(p, self.state.step_id))
             matrix.set_full(p)
-            
+
             self.state.energy += 12
         else:
             self.state.energy += 6
@@ -597,7 +600,3 @@ class Bot(object): # nanobot
 
     def __repr__(self):
         return "Bot: {}, Seeds: {}\n\n{}".format(self.bid, self.seeds, repr(self.state.matrix._ndarray[:, self.pos.y, :]))
-
-        
-
-
