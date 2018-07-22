@@ -103,10 +103,10 @@ class Diff:
         return self.dx*self.dx + self.dy*self.dy + self.dz*self.dz
 
     def mlen(self):
-        return sum(map(abs, (self.x, self.y, self.z)))
+        return sum(map(abs, (self.dx, self.dy, self.dz)))
 
     def clen(self):
-        return max(map(abs, (self.x, self.y, self.z)))
+        return max(map(abs, (self.dx, self.dy, self.dz)))
 
     def __repr__(self):
         return f"<{self.dx}, {self.dy}, {self.dz}>"
