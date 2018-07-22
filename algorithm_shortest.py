@@ -34,8 +34,8 @@ def closest_best_point(st):
 def fill(st, bot, dir):
     pts = [
         bot.pos + dir,
-        bot.pos + dir + FORWARD,
-        bot.pos + dir + BACK
+        # bot.pos + dir + FORWARD,
+        # bot.pos + dir + BACK
     ]
     for pt in pts:
         if st.matrix.is_valid_point(pt) and st.matrix.would_be_grounded(pt) and st.matrix._ndarray[pt.x, pt.y, pt.z] == state.Voxel.MODEL:
@@ -47,9 +47,9 @@ def solve(st):
         
         for bot in st.bots:
             # print(bot)
-            n+=1
-            if n>1000:
-                return
+            # n+=1
+            # if n>1000:
+            #     return
             pt = next_best_point(st, bot)
             if pt is not None:
                 if (pt - bot.pos).mlen() == 1:

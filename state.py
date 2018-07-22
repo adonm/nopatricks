@@ -408,10 +408,10 @@ class BotOld(object): # nanobot
             matrix.set_full(p)
             
             self.state.energy += 12
+            if self.state.enable_trace:
+                self.state.trace.append( commands.Fill().set_nd( nd.dx, nd.dy, nd.dz ) )
         else:
-            self.state.energy += 6
-        if self.state.enable_trace:
-            self.state.trace.append( commands.Fill().set_nd( nd.dx, nd.dy, nd.dz ) )
+            self._wait()
 
     def void(self, nd):
         print('FIXME: Bot.void()')
