@@ -43,8 +43,8 @@ def solve(st):
             # n+=1
             # if n>1000:
             #     return
-            pt = next_best_point(st, bot)
-            # pt = st.matrix.fill_next(bot)
+            # pt = next_best_point(st, bot)
+            pt = st.matrix.fill_next(bot)
             # print(bot.pos)
             # print("pt")
             # print(pt)
