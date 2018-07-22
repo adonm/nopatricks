@@ -461,43 +461,14 @@ class Bot(object): # nanobot
     bid: int = 1
     pos: Coord = Coord(0,0,0)
     seeds: list = field(default_factory = default_seeds)
-    actions: list
+    actions: list = field(default_factory = list)
 
-    def halt(self):
-        self.actions.append(lambda _ : self._halt())
-    
-    def wait(self):
-        self.actions.append(lambda _ : self._wait())
-
-    def flip(self):
-        self.actions.append(lambda _ : self._flip())
-
-    def smove(self, diff):
-        self.actions.append(lambda _ : self._smove(diff))
-
-    def lmove(self, diff1, diff2):
-        self.actions.append(lambda _ : self._lmove(diff1, diff2))
-    
-    def fission(self, nd, m):
-        self.actions.append(lambda _ : self._fission(nd, m))
-
-    def fusionp(self, nd):
-        self.actions.append(lambda _ : self._fusionp(nd))
-
-    def fusions(self, nd):
-        self.actions.append(lambda _ : self._fusions(nd))
-
-    def fill(self, nd):
-        self.actions.append(lambda _ : self._fill(nd))
-
-    def void(self, nd):
-        self.actions.append(lambda _ : self._void(nd))
-
-    def gfill(self, nd, m):
-        self.actions.append(lambda _ : self._void(nd, m))
-
-    def gvoid(self, nd, m):
-        self.actions.append(lambda _ : self._void(nd, m))
+    def __getattr__(self, name):
+        if hasattr(self, "_" + name):
+            fn = getattr(self, "_" + name)
+            def queuefn(*args, **kwargs):
+                self.actions.append(lambda: fn(*args, **kwargs))
+            return queuefn
 
     def _halt(self):
         if len(self.state.bots) > 1:
