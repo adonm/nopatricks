@@ -282,7 +282,7 @@ class State(object):
             if len(bot.actions)>0:
                 bot.actions.pop()()
             else:
-                return
+                bot._wait()
 
         if self.harmonics == True:
             self.energy += 30 * self.R * self.R * self.R
