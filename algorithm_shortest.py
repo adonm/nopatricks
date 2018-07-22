@@ -37,14 +37,14 @@ def fill(st, bot, dir):
 def solve(st):
     n = 0
     while not st.is_model_finished():
-
+        stuck_bots=0
         for bot in st.bots:
             # print(bot)
             # n+=1
             # if n>1000:
             #     return
-            # pt = next_best_point(st, bot)
-            pt = st.matrix.fill_next(bot)
+            pt = next_best_point(st, bot)
+            # pt = st.matrix.fill_next(bot)
             # print(bot.pos)
             # print("pt")
             # print(pt)
@@ -54,6 +54,7 @@ def solve(st):
                     # print("filling")
                     fill(st, bot, pt - bot.pos)
                 else:
+                    found = False
                     for a in pt.adjacent(st.R):
                         if st.matrix[a].is_void():
                             path = shortest_path(st, bot, a)
@@ -65,13 +66,20 @@ def solve(st):
                             if path is not None:
                                 # print("got path")
                                 compress(st, bot, path)
+                                found=True
+                                break
                             elif len(bot.actions)==0:
                                 fill(st, bot, pt - a)
-                            break
+                                found=True
+                                break
+                            else:
+                                raise ValueError( 'could not get to point! {}'.format(str(pt)) )
+                    if not found:
+                        stuck_bots += 1
             else:
+                stuck_bots+=1
                 # print("back to base")
                 back_to_base(st, bot)
-
         while any(len(bot.actions)>0 for bot in st.bots):
             # for bot in st.bots:
             #     print(bot.pos)
@@ -79,6 +87,10 @@ def solve(st):
                 #     print(bot.actions[0])
             # print("stepping")
             st.step()
+
+        if stuck_bots == len(st.bots):
+            raise ValueError( 'all bots stuck!' )
+            break
 
 
 def shortest_path_algo(st):
