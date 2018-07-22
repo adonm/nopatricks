@@ -24,15 +24,6 @@ def next_best_point(st, bot=None):
                 return coord
     return None
 
-zcoords = []
-def closest_best_point(st, bot):
-    global zcoords
-    if len(zcoords) == 0:
-        zcoords = st.matrix.fill_next(bot.pos + DOWN)
-        zcoords.reverse()
-    pt = zcoords.pop()
-    return pt
-
 def fill(st, bot, dir):
     pts = [
         bot.pos + dir,
@@ -52,7 +43,7 @@ def solve(st):
             # n+=1
             # if n>600:
             #     return
-            pt = next_best_point(st, bot)
+            pt = st.matrix.fill_next(bot)
             if pt is not None:
                 if (pt - bot.pos).mlen() == 1:
                     fill(st, bot, pt - bot.pos)
