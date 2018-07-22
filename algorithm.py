@@ -32,6 +32,7 @@ def convex_hull(st):
     }
 
 def next_move(st, bot, path):
+    print(st)
     i = 0
     j = 1
     while j<len(path) and (path[j] - path[i]).is_manhatten():

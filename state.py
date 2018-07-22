@@ -55,45 +55,60 @@ class Voxel:
 
 
 class Matrix(Mapping):
+    _nfull = None
+    _nmodel = None
+    _ngrounded = None
     """ Matrix(size=R) initialises an empty matrix
         Matrix(problem=N) loads problem N
         Matrix(filename="foo.mdl") loads model file"""
 
     def __init__(self, **kwargs):
         self.ungrounded = set()
-        self.ngrounded = 0
-        self.nfull = 0
         self.model_pts = None
         if 'size' in kwargs:
             self.size = kwargs['size']
-            self.state.flat = [Voxel.empty().val for i in range(self.size ** 3)]
+            self._ndarray.flat = np.zeros(shape=(size, size, size), dtype=np.dtype('u1'))
         elif 'filename' in kwargs:
-            self.size, self.state = Matrix._load_file(kwargs['filename'])
+            self.size, self._ndarray = Matrix._load_file(kwargs['filename'])
         else:
-            self.size, self.state = Matrix._load_prob(kwargs.get('problem', 1))
+            self.size, self._ndarray = Matrix._load_prob(kwargs.get('problem', 1))
         
-        self.nmodel = len([self[v] for v in self if self[v].is_model()])
+    @property
+    def nfull(self):
+        if not self._nfull:
+            self._nfull = np.count_nonzero(self._ndarray & Voxel.FULL)
+        return self._nfull
 
     @property
-    def num_modelled(self):
-        return len([v for v in self.state if v.is_model()])
+    def nmodel(self):
+        if not self._nmodel:
+            self._nmodel = np.count_nonzero(self._ndarray & Voxel.MODEL)
+        return self._nmodel
+
+    @property
+    def ngrounded(self):
+        if not self._ngrounded:
+            self._ngrounded = np.count_nonzero(self._ndarray & Voxel.GROUNDED)
+        if self._ngrounded % 100 == 0: # status output
+            print(self._ngrounded)
+        return self._ngrounded
 
     @staticmethod
     def _load_prob(num):
-        return Matrix._load_file("problemsL/LA%03d_tgt.mdl" % num)
+        return Matrix._load_file("problemsF/FA%03d_tgt.mdl" % num)
 
     @staticmethod
     def _load_file(filename):
         with open(filename, 'rb') as fb:
             bytedata = fb.read()
             size = int(bytedata[0])
-            state = np.zeros(shape=(size, size, size), dtype=np.dtype('u1'))
+            ndarray = np.zeros(shape=(size, size, size), dtype=np.dtype('u1'))
             index = 0
             for byte in bytedata[1:]:
                 for bit in to_uint64_le( unpack_bits( byte ) ):
-                    state.flat[index] = Voxel.empty(bit).val
+                    ndarray.flat[index] = Voxel.empty(bit).val
                     index += 1
-            return size, state
+            return size, ndarray
 
     def is_valid_point(self, coord):
         return (0 <= coord.x < self.size) and (0 <= coord.y < self.size) and (0 <= coord.z < self.size)
@@ -125,10 +140,10 @@ class Matrix(Mapping):
         return self.size ** 3
 
     def __getitem__(self, key):
-        return Voxel(self.state[self.coord_index(key)])
+        return Voxel(self._ndarray[self.coord_index(key)])
 
     def __setitem__(self, key, voxel):
-        self.state[self.coord_index(key)] = voxel.val
+        self._ndarray[self.coord_index(key)] = voxel.val
 
     def ground_adjacent(self, gc):
         stack = [gc]
@@ -140,16 +155,21 @@ class Matrix(Mapping):
                     self.ungrounded.remove(v)
                 stack.append(v)
     
-    def set_grounded(self, c):
-        v = self[c]
-        v.val |= Voxel.GROUNDED
-        self.ngrounded += 1
+    def toggle_bot(self, c):
+        self._ndarray[astuple(c)] ^= Voxel.BOT
 
-    def set_full(self, c):
-        v = self[c]
-        assert not (v.val & Voxel.FULL)
-        v.val |= Voxel.FULL
-        self.nfull += 1
+    def set_grounded(self, c):
+        self._ndarray[astuple(c)] |= Voxel.GROUNDED
+        self._ngrounded = None # invalidate cache
+
+    def set_full(self, c1, c2=None):
+        # fill a voxel or a region
+        if not c2:
+            assert not (self[c1].val & Voxel.FULL)
+            self._ndarray[astuple(c1)] |= Voxel.FULL
+        else:
+            pass # todo fill region
+        self._nfull = None # invalidate cache
 
     def would_be_grounded(self, p):
         return p.y == 0 or len([x for x in p.adjacent(self.size) if self[x].is_grounded()]) > 0
@@ -207,7 +227,7 @@ class MatrixYPlane(Mapping):
         self.matrix[self.keygen(key)] = value
 
     def __repr__(self):
-        return repr(self.matrix.state[:,self.y,:])
+        return repr(self.matrix._ndarray[:,self.y,:])
 
     def adjacent(self, key):
         deltas = [(-1, 0), (1, 0), (0, -1), (0, 1)]
@@ -243,7 +263,9 @@ class State(object):
     @classmethod
     def create(cls, problem=1):
         self = cls(Matrix(problem=problem))
-        self.bots.append(Bot(state=self))
+        bot = Bot(state=self)
+        self.matrix.toggle_bot(bot.pos) # enter voxel
+        self.bots.append(bot)
         test = 'dfltEnergy/LA{:03d}'.format(problem)
         if os.path.isfile(test):
             self.default_energy = int(open(test, 'r').read(), 0)
@@ -272,6 +294,7 @@ class State(object):
                     self.secondary_fuse_bots.pop(i)
                     prim_bot.seeds.append(sec_bot.bid)
                     prim_bot.seeds.extend(sec_bot.seeds)
+                    self.matrix.toggle_bot(sec_bot.pos) # leave voxel
                     self.bots.remove(sec_bot)
                     self.energy -= 24
                     break
@@ -289,7 +312,7 @@ class State(object):
 
 
 def default_seeds():
-    return list(range(2,21))
+    return list(range(2,41))
 
 @dataclass
 class Bot(object): # nanobot
@@ -316,6 +339,8 @@ class Bot(object): # nanobot
         dest = self.pos + diff
         if not self.state.matrix[dest].is_void():
             raise RuntimeError('tried to move to occupied point {} at time {}'.format(dest, self.state.step_id))
+        self.state.matrix.toggle_bot(self.pos) # leave voxel
+        self.state.matrix.toggle_bot(dest) # enter voxel
         self.pos = dest
         self.state.energy += 2 * diff.mlen()
         if self.state.enable_trace:
@@ -325,6 +350,8 @@ class Bot(object): # nanobot
         dest = self.pos + diff1 + diff2
         if not self.state.matrix[dest].is_void():
             raise RuntimeError('tried to move to occupied point {} at time {}'.format(dest, self.state.step_id))
+        self.state.matrix.toggle_bot(self.pos) # leave voxel
+        self.state.matrix.toggle_bot(dest) # enter voxel
         self.pos = dest
         self.state.energy += 2 * (diff1.mlen() + 2 + diff2.mlen())
         if self.state.enable_trace:
@@ -332,6 +359,7 @@ class Bot(object): # nanobot
 
     def fission(self, nd, m):
         f = Bot(self.state, self.seeds[0], self.pos + nd, self.seeds[1:m+2])
+        self.state.matrix.toggle_bot(self.pos + nd) # enter voxel
         self.seeds = self.seeds[m+2:]
         self.state.bots_to_add.append(f)
         self.state.energy += 24
@@ -385,7 +413,7 @@ class Bot(object): # nanobot
             self.state.trace.append( commands.GVoid().set_nd( nd.dx, nd.dy, nd.dz ).set_fd( fd.dx, fd.dy, fd.dz ) )
 
     def __repr__(self):
-        return "Bot: {}, Seeds: {}\n\n{}".format(self.bid, self.seeds, repr(self.state.matrix.state[:, self.pos.y, :]))
+        return "Bot: {}, Seeds: {}\n\n{}".format(self.bid, self.seeds, repr(self.state.matrix._ndarray[:, self.pos.y, :]))
 
         
 
