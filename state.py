@@ -389,6 +389,7 @@ class Bot(object): # nanobot
         dest = self.pos + diff
 
         if dest in self.state.current_moves:
+            self.actions = []
             self._wait()
             return
 
@@ -420,6 +421,11 @@ class Bot(object): # nanobot
 
     def _lmove(self, diff1, diff2):
         dest = self.pos + diff1 + diff2
+        # print("")
+        # print(self.pos)
+        # print(diff1)
+        # print(diff2)
+        # print(dest)
 
         # print("lpath")
         # print(self.pos)
@@ -436,6 +442,7 @@ class Bot(object): # nanobot
             if m in self.state.current_moves:
                 print("can't lmvove interference")
                 # self._smove(UP.mul(self.bid))
+                self.actions = []
                 self._wait()
                 return
 
@@ -443,6 +450,7 @@ class Bot(object): # nanobot
         if not all(self.state.matrix[p].is_void() for p in self.get_lpath(diff1, diff2)):
             self.actions = []
             print("can't lmvove")
+            self.actions = []
             # self._smove(UP.mul(self.bid))
             self._wait()
             # raise RuntimeError('tried to move to occupied point {} at time {}'.format(dest, self.state.step_id))

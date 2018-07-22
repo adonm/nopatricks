@@ -43,9 +43,10 @@ def solve(st):
             # n+=1
             # if n>1000:
             #     return
-            # pt = next_best_point(st, bot)
-            pt = st.matrix.fill_next(bot)
+            pt = next_best_point(st, bot)
+            # pt = st.matrix.fill_next(bot)
             # print(bot.pos)
+            # print("pt")
             # print(pt)
             # print("")
             if pt is not None:
@@ -86,8 +87,9 @@ def shortest_path_algo(st):
 
     minX, maxX, minY, maxY, minZ, maxZ = st.matrix.bounds
     depth = maxZ - minZ
-    split = 2
+    split = 3
     nbots = ceil(depth / split)
+    print("nbots: "+str(nbots))
     region = []
     for i in range(nbots):
         region.append({
@@ -98,13 +100,13 @@ def shortest_path_algo(st):
             "minZ": minZ + i * split,
             "maxZ": min([maxZ, minZ + (i+1) * split])+1
         })
-    print(region)
-    print(convex_hull(st))
-    print(st.matrix.bounds)
+    # print(region)
+    # print(convex_hull(st))
+    # print(st.matrix.bounds)
     st.step_all()
 
     for i in range(1, nbots):
-        print(st.bots[0].seeds)
+        # print(st.bots[0].seeds)
         st.bots[0].fission(FORWARD, 1)
         st.step_all()
         for j in range(region[nbots-i]["minZ"]):
@@ -134,8 +136,8 @@ def shortest_path_algo(st):
 if __name__ == '__main__':
     problem = int(sys.argv[1])
     st = state.State.create(problem=problem)
-    # cProfile.run("shortest_path_algo(st)", sort="cumulative")
-    shortest_path_algo(st)
+    cProfile.run("shortest_path_algo(st)", sort="cumulative")
+    # shortest_path_algo(st)
     bot = st.bots[0]
     back_to_base(st, bot)
     bot.halt()
