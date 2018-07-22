@@ -96,6 +96,19 @@ def shortest_path_algo(st):
     while st.step():
         pass
 
+    minX, maxX, minY, maxY, minZ, maxZ = st.matrix.bounds
+    depth = zmax - zmin
+    nbots = floor(depth / 7)
+    regions = []
+    for i in range(nbots):
+        region.append({
+            "minX": minX,
+            "maxX": maxX,
+            "minY": minY,
+            "maxY": maxY,
+            "minZ": minZ + i * 7,
+            "maxZ": min([maxZ, minZ + (i+1) * 7])
+        })
 
     bot.region = {
         "minX": 0,

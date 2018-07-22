@@ -59,6 +59,7 @@ class Matrix(Mapping):
     _nfull = None
     _nmodel = None
     _ngrounded = None
+    _bounds = None
     """ Matrix(size=R) initialises an empty matrix
         Matrix(problem=N) loads problem N
         Matrix(filename="foo.mdl") loads model file"""
@@ -73,6 +74,17 @@ class Matrix(Mapping):
             self.size, self._ndarray = Matrix._load_file(kwargs['filename'])
         else:
             self.size, self._ndarray = Matrix._load_prob(kwargs.get('problem', 1))
+
+    @property
+    def bounds(self):
+        if not self._bounds:
+            mcoords = np.where(s._ndarray & Voxel.MODEL)
+            self._bounds = (
+                min(mcoords[0]), max(mcoords[0]),
+                min(mcoords[1]), max(mcoords[1]),
+                min(mcoords[2]), max(mcoords[2])
+            )
+        return self._bounds
         
     @property
     def nfull(self):
