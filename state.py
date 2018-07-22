@@ -193,7 +193,7 @@ class Matrix(Mapping):
     def fill_next(self, bot=None):
         coords = self.to_fill()
         if bot: # sort coords by distance from bot
-            coords.sort(key=lambda c: (c-bot.pos).mlen())
+            coords.sort(key=lambda c: (c-bot.pos).mlen() + abs(c.y - bot.pos.y) * self.size)
             minZ = bot.region["minZ"]
             maxZ = bot.region["maxZ"]
             for c in coords:
