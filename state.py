@@ -193,7 +193,7 @@ class Matrix(Mapping):
     def fill_next(self, bot=None):
         coords = self.to_fill()
         if bot: # sort coords by distance from bot
-            coords.sort(key=lambda c: (c-bot.pos).mlen() + abs(c.y - bot.pos.y) * self.size)
+            coords.sort(key=lambda c: (c-bot.pos).mlen() + abs(c.y) * self.size)
             minZ = bot.region["minZ"]
             maxZ = bot.region["maxZ"]
             for c in coords:
@@ -391,7 +391,7 @@ class Bot(object): # nanobot
         if dest in self.state.current_moves:
             self._wait()
             return
-            
+
         if not self.state.matrix[dest].is_void():
             self.actions = []
             self._wait()
@@ -479,6 +479,10 @@ class Bot(object): # nanobot
             self.state.trace.append( commands.FusionS().set_nd( nd.dx, nd.dy, nd.dz ) )
 
     def _fill(self, nd):
+        # print("doing fill")
+        # print(self.pos)
+        # print(nd)
+
         p = self.pos + nd
         if p in self.state.current_moves:
             self._wait()
