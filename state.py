@@ -258,7 +258,7 @@ class State(object):
     secondary_fuse_bots: list = field(default_factory = list)
     default_energy: int = 1
     enable_trace: bool = True
-    current_moves: list = field(default_factory = list)
+    current_moves: set = field(default_factory = set)
 
     @property
     def R(self):
@@ -295,7 +295,7 @@ class State(object):
             pass
     def step(self):
         # print("step")
-        self.current_moves=[]
+        self.current_moves=set()
         if len([ bot for bot in self.bots if len(bot.actions) > 0 ]) == 0:
             return False
 
@@ -491,7 +491,7 @@ class Bot(object): # nanobot
         if dest in self.state.current_moves:
             self._wait()
             return
-        self.state.current_moves.append(dest)
+        self.state.current_moves.add(dest)
         if not self.state.matrix[dest].is_void():
             self.actions = []
             self._wait()
@@ -537,7 +537,7 @@ class Bot(object): # nanobot
                 self._wait()
                 return
 
-        self.state.current_moves += moves
+        self.state.current_moves.update(moves)
 
         if not all(self.state.matrix[p].is_void() for p in self.get_lpath(diff1, diff2)):
             self.actions = []
@@ -576,6 +576,9 @@ class Bot(object): # nanobot
 
     def _fill(self, nd):
         p = self.pos + nd
+        if p in self.state.current_moves:
+            self._wait()
+            return
         matrix = self.state.matrix
         if matrix[p].is_void():
             if matrix.would_be_grounded(p):
@@ -587,6 +590,7 @@ class Bot(object): # nanobot
                 self._wait()
                 return
                 # raise RuntimeError('tried to fill ungrounded point {} at time {}'.format(p, self.state.step_id))
+            self.state.current_moves.add(p)
             matrix.set_full(p)
 
             self.state.energy += 12
