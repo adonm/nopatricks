@@ -6,8 +6,9 @@ import sys, os
 import math
 from algorithm import *
 import numpy as np
-from math import floor
+from math import floor, ceil
 import cProfile
+
 def next_best_point(st, bot=None):
     minX = bot.region["minX"]
     maxX = bot.region["maxX"]
@@ -24,8 +25,7 @@ def next_best_point(st, bot=None):
     return None
 
 zcoords = []
-def closest_best_point(st):
-    bot = st.bots[0]
+def closest_best_point(st, bot):
     global zcoords
     if len(zcoords) == 0:
         zcoords = st.matrix.fill_next(bot.pos + DOWN)
@@ -50,7 +50,7 @@ def solve(st):
         for bot in st.bots:
             # print(bot)
             # n+=1
-            # if n>1000:
+            # if n>600:
             #     return
             pt = next_best_point(st, bot)
             if pt is not None:
@@ -89,54 +89,33 @@ def shortest_path_algo(st):
     bot.smove(UP)
 
     minX, maxX, minY, maxY, minZ, maxZ = st.matrix.bounds
-    depth = zmax - zmin
-    nbots = floor(depth / 7)
-    regions = []
+    depth = maxZ - minZ
+    split = 3
+    nbots = ceil(depth / split)
+    region = []
     for i in range(nbots):
         region.append({
             "minX": minX,
             "maxX": maxX,
             "minY": minY,
             "maxY": maxY,
-            "minZ": minZ + i * 7,
-            "maxZ": min([maxZ, minZ + (i+1) * 7])
+            "minZ": minZ + i * split,
+            "maxZ": min([maxZ, minZ + (i+1) * split])+1
         })
-
-    bot.region = {
-        "minX": 0,
-        "maxX": st.R,
-        "minY": 0,
-        "maxY": st.R,
-        "minZ": 0,
-        "maxZ": floor(st.R/2),
-    }
-    st.bots[1].region = {
-        "minX": 0,
-        "maxX": st.R,
-        "minY": 0,
-        "maxY": st.R,
-        "minZ": floor(st.R/2),
-        "maxZ": st.R,
-    }
+    print(region)
+    print(convex_hull(st))
+    print(st.matrix.bounds)
     st.step_all()
 
-    nbots = 4
     for i in range(1, nbots):
-        st.bots[0].fission(LEFT, st.bots[0].seeds[0])
+        print(st.bots[0].seeds)
+        st.bots[0].fission(FORWARD, 1)
         st.step_all()
-        st.bots[i].smove(LEFT.mul(nbots-i))
+        for j in range(region[nbots-i]["minZ"]):
+            st.bots[i].smove(FORWARD)
         st.step_all()
-
     for i in range(nbots):
-        st.bots[i].region = {
-            "minX": (i%2)*floor(st.R/2),
-            "maxX": ((i%2)+1)*floor(st.R/2),
-            "minY": 0,
-            "maxY": st.R,
-            "minZ": floor(i/2)*floor(st.R/2),
-            "maxZ": (floor(i/2)+1)*floor(st.R/2),
-        }
-        print(st.bots[i].region)
+        st.bots[i].region = region[i]
 
     solve(st)
     print("finished solve")

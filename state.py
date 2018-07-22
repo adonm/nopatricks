@@ -78,14 +78,14 @@ class Matrix(Mapping):
     @property
     def bounds(self):
         if not self._bounds:
-            mcoords = np.where(s._ndarray & Voxel.MODEL)
+            mcoords = np.where(self._ndarray & Voxel.MODEL)
             self._bounds = (
-                min(mcoords[0]), max(mcoords[0]),
-                min(mcoords[1]), max(mcoords[1]),
-                min(mcoords[2]), max(mcoords[2])
+                min(mcoords[0]), max(mcoords[0])+1,
+                min(mcoords[1]), max(mcoords[1])+1,
+                min(mcoords[2]), max(mcoords[2])+1
             )
         return self._bounds
-        
+
     @property
     def nfull(self):
         if not self._nfull:

@@ -10,6 +10,8 @@ import heapq
 def convex_hull(st):
     minx = st.R-1
     maxx = 0
+    miny = st.R-1
+    maxy = 0
     minz = st.R-1
     maxz = 0
     for y in range(st.R):
@@ -20,6 +22,10 @@ def convex_hull(st):
                         minx = x
                     if x > maxx:
                         maxx = x
+                    if y < miny:
+                        miny = y
+                    if y > maxy:
+                        maxy = y
                     if z < minz:
                         minz = z
                     if z > maxz:
@@ -27,6 +33,8 @@ def convex_hull(st):
     return {
         "minx": minx,
         "maxx": maxx,
+        "miny": miny,
+        "maxy": maxy,
         "minz": minz,
         "maxz": maxz,
     }
@@ -42,7 +50,7 @@ def next_move(st, bot, path):
     while k<len(path) and (path[k] - path[j]).is_manhatten():
         k += 1
     k -= 1
-    
+
     if i!=j and k!=j:
         # print("next_mvoe lmove")
         # print(path[j] - path[i])
@@ -85,8 +93,8 @@ def pointcost(st, src, dest):
     danger = 0
     # for bot in st.bots:
     #     danger -= (dest - bot.pos).mlen()
-    return distance - danger    
-    
+    return distance - danger
+
 def shortest_path(st, bot, c):
     if bot.pos == c:
         return []
@@ -134,7 +142,7 @@ def back_to_base(st, bot):
     path = shortest_path(st, bot, base)
     if path is not None:
         compress(st, bot, path)
-    
+
 def skip(bot, st, diff):
     jump = 1
     while jump < 16:
@@ -189,7 +197,7 @@ if __name__ == '__main__':
     back_to_base(st, st.bots[0])
     st.bots[0].halt()
     st.step()
-        
+
     print( st )
     filename = "submission/LA"+str(problem).zfill(3)+".nbt"
     sys.stderr.write('{}: {}\n'.format(filename, st.score) )
@@ -197,5 +205,3 @@ if __name__ == '__main__':
     data = commands.export_nbt( st.trace )
     with open(filename, "wb") as file:
         file.write(data)
-
-    
