@@ -281,6 +281,8 @@ class State(object):
         for bot in self.bots:
             if len(bot.actions)>0:
                 bot.actions.pop()()
+            else:
+                return
 
         if self.harmonics == True:
             self.energy += 30 * self.R * self.R * self.R
@@ -460,10 +462,10 @@ class Bot(object): # nanobot
         self.actions.append(lambda : self._void(nd))
 
     def gfill(self, nd, m):
-        self.actions.append(lambda : self._void(nd, m))
+        self.actions.append(lambda : self._gfill(nd, m))
 
     def gvoid(self, nd, m):
-        self.actions.append(lambda : self._void(nd, m))
+        self.actions.append(lambda : self._gvoid(nd, m))
 
     def _halt(self):
         if len(self.state.bots) > 1:
