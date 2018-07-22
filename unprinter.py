@@ -1,3 +1,6 @@
+#!/usr/bin/env python3
+import sys
+
 import commands
 from mrcrowbar import utils
 
@@ -19,6 +22,7 @@ def unprint(cmds):
     
     """
 
+    # first pass: find out the create/destroy ordering of the bots
     bots = [{'id': 1, 'x': 0, 'y': 0, 'z': 0}]
     bot_acc = 2
     time = 0
@@ -71,6 +75,7 @@ def unprint(cmds):
 
     print(changes)
 
+    # create a handy mapping between the current bot order vs the order we want them to appear in
     map_acc = 2
     mapping = {1: 1}
     times = [t for t in changes.keys()]
@@ -87,8 +92,10 @@ def unprint(cmds):
     mapping_rev = {v: k for k, v in mapping.items()}
     print(mapping)
 
-    #return changes, mapping
 
+
+    # second pass: create an inverted copy of all the instructions
+    # bots are stored here with the normal unmapped ID
     bots = [{'id': 1, 'x': 0, 'y': 0, 'z': 0}]
     time = 0
     result = [commands.Halt()]
@@ -117,11 +124,10 @@ def unprint(cmds):
                 buffer.append((mapping[prim], commands.Fission().set_nd(fusp.ndx, fusp.ndy, fusp.ndz)))
                 bots.remove(secbot)
 
-
+        # rearrange all the instructions in the buffer based on the new bot order
         buffer.sort(key=lambda x: -x[0])
         
         for bot_id, instr in buffer:
-            print((bot_id, instr, bots))
             klass = type(instr)
             # most instructions we can pass through
             if klass in (commands.Wait, commands.Flip):
@@ -148,9 +154,11 @@ def unprint(cmds):
             elif klass == commands.Void:
                 mod = commands.Fill().set_nd( instr.ndx, instr.ndy, instr.ndz )
                 result.append(mod)
-            #elif klass == commands.GFill:
+            elif klass == commands.GFill:
+                raise RuntimeError('FIXME: GFill not supported')
             #    mod = commands.GVoid().
-            #elif klass == commands.GVoid:
+            elif klass == commands.GVoid:
+                raise RuntimeError('FIXME: GVoid not supported')
             #    mod = commands.GFill().
             
             elif klass in (commands.Fission, commands.FusionP, commands.FusionS):
@@ -158,6 +166,7 @@ def unprint(cmds):
                 result.append(instr)
 
             elif klass == commands.Halt:
+                # we've reached the end
                 end = True
         
         bots.extend(new_bots)
@@ -169,13 +178,14 @@ def unprint(cmds):
     
     
 
-def test():
-    f = open('submission/FA001.nbt', 'rb').read()
+if __name__ == '__main__':
+    problem = int(sys.argv[1])
+    f = open('submission/FA{:03d}.nbt'.format(problem), 'rb').read()
     cmds = commands.read_nbt(f)
     res = unprint(cmds)
     
     data = commands.export_nbt( res )
-    g = open('submission/FD001.nbt', 'wb')
+    g = open('submission/FD{:03d}.nbt'.format(problem), 'wb')
     g.write(data)
     g.close()
 
