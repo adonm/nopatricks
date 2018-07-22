@@ -170,7 +170,7 @@ class Matrix(Mapping):
         self._nfull = None # invalidate cache
 
     def would_be_grounded(self, p):
-        return p[1] == 0 or len([n for n in p.adjacent(self.size) if self._ndarray[(n.x,n.y,n.z)] & Voxel.GROUNDED]) > 0
+        return p.y == 0 or len([n for n in p.adjacent(self.size) if self._ndarray[(n.x,n.y,n.z)] & Voxel.GROUNDED]) > 0
 
     def to_fill(self):
         if self.model_pts is None:

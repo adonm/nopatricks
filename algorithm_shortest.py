@@ -5,26 +5,13 @@ from coord import Coord, diff, UP, DOWN, LEFT, RIGHT, FORWARD, BACK
 import sys, os
 import math
 from algorithm import *
-
-pts = None
-minPt = 0
+import numpy as np
 
 def next_best_point(st):
-    global pts
-    global minPt
-    if pts is None:
-        pts = list(st.matrix.keys())
-    j = None	
-    while st.matrix[pts[minPt]].is_full() or not st.matrix[pts[minPt]].is_model():	
-        minPt += 1	
-
-    for i in range(minPt, len(pts)):	
-        if st.matrix[pts[i]].is_void() and st.matrix[pts[i]].is_model() and st.matrix.would_be_grounded(pts[i]):	
-            j = i	
-            break	
-    if j is None:	
-        return None
-    return pts[j]
+    for x, y, z in np.transpose(np.where(st.matrix._ndarray == state.Voxel.MODEL)):
+        coord = Coord(int(x), int(y), int(z))
+        if st.matrix.would_be_grounded(coord):
+            return coord
 
 zcoords = []
 def closest_best_point(st):
