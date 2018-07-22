@@ -44,13 +44,13 @@ def next_move(st, bot, path):
     k -= 1
     
     if i!=j and k!=j:
-        # print("lmove")
-        # print(path[j] - path[i])
-        # print(path[k] - path[j])
+        print("next_mvoe lmove")
+        print(path[j] - path[i])
+        print(path[k] - path[j])
         bot.lmove(path[j] - path[i], path[k] - path[j])
         return k
     elif i+1<len(path):
-        # print("smove")
+        print("next_mvoe smove")
         # print(path[i+1] - path[i])
         bot.smove(path[i+1] - path[i])
         return i+1
@@ -61,7 +61,6 @@ def compress(st, bot, path):
     i = 0
     while i < len(path):
         i = next_move(st, bot, path)
-        st.step()
         path = path[i:]
         # print(path)
         i = 0
@@ -69,7 +68,6 @@ def compress(st, bot, path):
 def smove_path(st, bot, path):
     for i in range(1, len(path)):
         bot.smove(path[i] - path[i-1])
-        st.step()
 
 class PriorityCoord(object):
     def __init__(self, priority, coord):
@@ -82,7 +80,13 @@ class PriorityCoord(object):
     def __repr__(self):
         return str(self.coord)
 
-        
+def pointcost(st, src, dest):
+    distance = (dest - src).mlen()
+    danger = 0
+    # for bot in st.bots:
+    #     danger -= (dest - bot.pos).mlen()
+    return distance - danger    
+    
 def shortest_path(st, bot, c):
     if bot.pos == c:
         return []
@@ -91,7 +95,7 @@ def shortest_path(st, bot, c):
     q = Q.PriorityQueue()
 
     seen.add(bot.pos)
-    q.put(PriorityCoord((c-bot.pos).magnitude_sqrd(), bot.pos))
+    q.put(PriorityCoord(pointcost(st, bot.pos, c), bot.pos))
 
     table = {}
     # print("searching short")
@@ -106,7 +110,7 @@ def shortest_path(st, bot, c):
             if n not in seen and st.matrix[n].is_void():
                 table[n] = p
                 seen.add(n)
-                q.put(PriorityCoord((c-n).magnitude_sqrd(), n))
+                q.put(PriorityCoord(pointcost(st, n, c), n))
                 if n == c:
                     found = True
 
@@ -116,13 +120,16 @@ def shortest_path(st, bot, c):
     path = []
     x = c
     while x != bot.pos:
+        assert st.matrix[x].is_void()
         path.append(x)
         x = table[x]
     path.append(bot.pos)
     return list(reversed(path))
 
 def back_to_base(st, bot):
-    compress(st, bot, shortest_path(st, bot, Coord(0,0,0)))
+    path = shortest_path(st, bot, Coord(0,0,0))
+    if path is not None:
+        compress(st, bot, path)
     
 def skip(bot, st, diff):
     jump = 1

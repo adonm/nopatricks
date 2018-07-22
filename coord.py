@@ -99,8 +99,11 @@ class Diff:
             n+=1 
         return n==1
 
-    def magnitude_sqrd(self):
-        return self.dx*self.dx + self.dy*self.dy + self.dz*self.dz
+    def mul(self, m):
+        return diff(self.dx*m, self.dy*m, self.dz*m)
+
+    def div(self, m):
+        return diff(int(self.dx/m), int(self.dy/m), int(self.dz/m))
 
     def mlen(self):
         return sum(map(abs, (self.dx, self.dy, self.dz)))
@@ -158,9 +161,6 @@ class NearDiff(Diff):
 
     def __add__(self, d):
         return diff(self.dx + d.dx, self.dy + d.dy, self.dz + d.dz)
-
-    def mul(self, m):
-        return NearDiff(self.dx * m, self.dy * m, self.dz * m)
 
     def __neg__(self):
         return NearDiff(-self.dx, -self.dy, -self.dz)

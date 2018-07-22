@@ -171,6 +171,8 @@ class Matrix(Mapping):
         self._nfull = None # invalidate cache
 
     def would_be_grounded(self, p):
+        if self[p].val & Voxel.BOT:
+            return False
         return p.y == 0 or len([n for n in p.adjacent(self.size) if self._ndarray[(n.x,n.y,n.z)] & Voxel.GROUNDED]) > 0
 
     def to_fill(self):
@@ -278,9 +280,12 @@ class State(object):
 
     def step(self):
 
+        if len([ bot for bot in self.bots if len(bot.actions) > 0 ]) == 0:
+            return False
+
         for bot in self.bots:
             if len(bot.actions)>0:
-                bot.actions.pop()()
+                bot.actions.pop(0)()
             else:
                 bot._wait()
 
@@ -293,6 +298,7 @@ class State(object):
         self.step_id += 1
 
         for prim_bot, sec_pos in self.primary_fuse_bots:
+            found_fuse = False
             for i, (sec_bot, prim_pos) in enumerate(self.secondary_fuse_bots):
                 if prim_bot.pos == prim_pos and sec_bot.pos == sec_pos:
                     self.secondary_fuse_bots.pop(i)
@@ -301,8 +307,10 @@ class State(object):
                     self.matrix.toggle_bot(sec_bot.pos) # leave voxel
                     self.bots.remove(sec_bot)
                     self.energy -= 24
+                    found_fuse=True
                     break
-            raise ValueError( 'missing secondary fusion match for {}'.format(prim_bot.bid) )
+            if not found_fuse:
+                raise ValueError( 'missing secondary fusion match for {}'.format(prim_bot.bid) )
         if self.secondary_fuse_bots:
             raise ValueError( 'missing primary fusion match for {}'.format(self.secondary_fuse_bots[0][0].bid) )
         self.primary_fuse_bots.clear()
@@ -310,6 +318,7 @@ class State(object):
         self.bots.extend(self.bots_to_add)
         self.bots_to_add.clear()
 
+        return True
 
     def __repr__(self):
         return 'step_id: {}, bots: {}, energy: {}, matrix: {}'.format(self.step_id, len( self.bots ), self.energy, repr(self.matrix))
@@ -375,13 +384,13 @@ class BotOld(object): # nanobot
 
     def fusionp(self, nd):
         # note: energy accounted for in State.step
-        self.primary_fuse_bots.append((self, self.pos+nd))
+        self.state.primary_fuse_bots.append((self, self.pos+nd))
         if self.state.enable_trace:
             self.state.trace.append( commands.FusionP().set_nd( nd.dx, nd.dy, nd.dz ) )
 
     def fusions(self, nd):
         # note: energy accounted for in State.step
-        self.secondary_fuse_bots.append((self, self.pos+nd))
+        self.state.secondary_fuse_bots.append((self, self.pos+nd))
         if self.state.enable_trace:
             self.state.trace.append( commands.FusionS().set_nd( nd.dx, nd.dy, nd.dz ) )
 
@@ -430,8 +439,14 @@ class Bot(object): # nanobot
     pos: Coord = Coord(0,0,0)
     seeds: list = field(default_factory = default_seeds)
     actions: list = field(default_factory = list)
+    # region contains min/max for all coords
+    region: dict = field(default_factory = lambda: {
+        "minX": 0,
+        "maxX": 1000
+    })
 
     def __getattr__(self, name):
+        print(name)
         if hasattr(self, "_" + name) and not name.startswith("_"):
             fn = getattr(self, "_" + name)
             def queuefn(*args, **kwargs):
@@ -455,26 +470,56 @@ class Bot(object): # nanobot
             self.state.trace.append( commands.Flip() )
 
     def _smove(self, diff):
+        print("smove")
         dest = self.pos + diff
         if not self.state.matrix[dest].is_void():
-            raise RuntimeError('tried to move to occupied point {} at time {}'.format(dest, self.state.step_id))
-        self.state.matrix.toggle_bot(self.pos) # leave voxel
-        self.state.matrix.toggle_bot(dest) # enter voxel
-        self.pos = dest
-        self.state.energy += 2 * diff.mlen()
-        if self.state.enable_trace:
-            self.state.trace.append( commands.SMove().set_lld( diff.dx, diff.dy, diff.dz ) )
+            self.actions = []
+            self._wait()
+            # raise RuntimeError('tried to move to occupied point {} at time {}'.format(dest, self.state.step_id))
+        else:
+            self.state.matrix.toggle_bot(self.pos) # leave voxel
+            self.state.matrix.toggle_bot(dest) # enter voxel
+            self.pos = dest
+            self.state.energy += 2 * diff.mlen()
+            if self.state.enable_trace:
+                self.state.trace.append( commands.SMove().set_lld( diff.dx, diff.dy, diff.dz ) )
+
+    def get_lpath(self, diff1, diff2):
+        ps = []
+
+        dir1 = diff1.div(diff1.mlen())
+        dir2 = diff2.div(diff2.mlen())
+
+        for i in range(1, diff1.mlen()+1):
+            ps.append(self.pos + dir1.mul(i))
+        for i in range(1, diff2.mlen()+1):
+            ps.append(self.pos + diff1 + dir2.mul(i))
+        return ps
 
     def _lmove(self, diff1, diff2):
         dest = self.pos + diff1 + diff2
-        if not self.state.matrix[dest].is_void():
-            raise RuntimeError('tried to move to occupied point {} at time {}'.format(dest, self.state.step_id))
-        self.state.matrix.toggle_bot(self.pos) # leave voxel
-        self.state.matrix.toggle_bot(dest) # enter voxel
-        self.pos = dest
-        self.state.energy += 2 * (diff1.mlen() + 2 + diff2.mlen())
-        if self.state.enable_trace:
-            self.state.trace.append( commands.LMove().set_sld1( diff1.dx, diff1.dy, diff1.dz ).set_sld2( diff2.dx, diff2.dy, diff2.dz ) )
+
+        # print("lpath")
+        print(self.pos)
+        print(diff1)
+        print(diff2)
+        print(self.get_lpath(diff1, diff2))
+        print([self.state.matrix[p].is_void() for p in self.get_lpath(diff1, diff2)])
+        print([self.state.matrix[p].val for p in self.get_lpath(diff1, diff2)])
+        print(not all( self.state.matrix[p].is_void() for p in self.get_lpath(diff1, diff2)))
+        if not all(self.state.matrix[p].is_void() for p in self.get_lpath(diff1, diff2)):
+            self.actions = []
+            print("can't lmvove")
+            # self._smove(UP.mul(self.bid))
+            self._wait()
+            # raise RuntimeError('tried to move to occupied point {} at time {}'.format(dest, self.state.step_id))
+        else:
+            self.state.matrix.toggle_bot(self.pos) # leave voxel
+            self.state.matrix.toggle_bot(dest) # enter voxel
+            self.pos = dest
+            self.state.energy += 2 * (diff1.mlen() + 2 + diff2.mlen())
+            if self.state.enable_trace:
+                self.state.trace.append( commands.LMove().set_sld1( diff1.dx, diff1.dy, diff1.dz ).set_sld2( diff2.dx, diff2.dy, diff2.dz ) )
 
     def _fission(self, nd, m):
         f = Bot(self.state, self.seeds[0], self.pos + nd, self.seeds[1:m+2])
@@ -487,13 +532,13 @@ class Bot(object): # nanobot
 
     def _fusionp(self, nd):
         # note: energy accounted for in State.step
-        self.primary_fuse_bots.append((self, self.pos+nd))
+        self.state.primary_fuse_bots.append((self, self.pos+nd))
         if self.state.enable_trace:
             self.state.trace.append( commands.FusionP().set_nd( nd.dx, nd.dy, nd.dz ) )
 
     def _fusions(self, nd):
         # note: energy accounted for in State.step
-        self.secondary_fuse_bots.append((self, self.pos+nd))
+        self.state.secondary_fuse_bots.append((self, self.pos+nd))
         if self.state.enable_trace:
             self.state.trace.append( commands.FusionS().set_nd( nd.dx, nd.dy, nd.dz ) )
 
@@ -507,7 +552,9 @@ class Bot(object): # nanobot
             elif self.state.harmonics:
                 matrix.ungrounded.add(p)
             else:
-                raise RuntimeError('tried to fill ungrounded point {} at time {}'.format(p, self.state.step_id))
+                self._wait()
+                return
+                # raise RuntimeError('tried to fill ungrounded point {} at time {}'.format(p, self.state.step_id))
             matrix.set_full(p)
             
             self.state.energy += 12
