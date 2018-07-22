@@ -190,19 +190,18 @@ class Matrix(Mapping):
     def to_fill(self):
         return [Coord(int(x), int(y), int(z)) for x,y,z in np.transpose(np.where(self._ndarray == Voxel.MODEL))]
 
-    def fill_next(self, nearc=None): # ordered list of next coord that model wants filled that would be grounded
+    def fill_next(self, bot=None):
         coords = self.to_fill()
-        if nearc: # sort coords by distance from nearc
-            coords.sort(key=lambda c: (c-nearc).mlen() + self.size * abs(c.y - nearc.y))
-        x, y = None, None
-        zcoords = []
-        for c in coords:
-            if x and c.x != x and c.y != y:
-                continue
-            if self.would_be_grounded(c):
-                x, y = c.x, c.y
-                zcoords.append(c)
-        return zcoords
+        if bot: # sort coords by distance from bot
+            coords.sort(key=lambda c: (c-bot.pos).mlen())
+            minZ = bot.region["minZ"]
+            maxZ = bot.region["maxZ"]
+            for c in coords:
+                if minZ <= c.z < maxZ:
+                    return c
+            else:
+                return None
+        return coords[0]
 
     def yplane(self, y):
         """ Returns a view into this matrix at a constant y """
