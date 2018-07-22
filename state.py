@@ -192,7 +192,7 @@ class Matrix(Mapping):
 
     def fill_next(self, bot=None):
         if bot: # sort coords by distance from bot
-            if hasattr(bot, "pcache") and (bot.pcache["pos"] - bot.pos).mlen() < 15:
+            if hasattr(bot, "pcache") and (bot.pcache["pos"] - bot.pos).mlen() < 20:
                 coords = bot.pcache["coords"]
             else:
                 coords = self.to_fill()
@@ -204,7 +204,7 @@ class Matrix(Mapping):
             maxZ = bot.region["maxZ"]
             for c in coords:
                 if minZ <= c.z < maxZ and minX <= c.z < maxX:
-                    if self[c].is_void() and self.would_be_grounded(c):
+                    if self._ndarray[c.x,c.y,c.z] == Voxel.MODEL and self.would_be_grounded(c):
                         return c
             else:
                 return None
