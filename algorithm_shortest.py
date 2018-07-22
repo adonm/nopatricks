@@ -34,8 +34,8 @@ def closest_best_point(st):
 def fill(st, bot, dir):
     pts = [
         bot.pos + dir,
-        # bot.pos + dir + FORWARD,
-        # bot.pos + dir + BACK
+        bot.pos + dir + FORWARD,
+        bot.pos + dir + BACK
     ]
     for pt in pts:
         if st.matrix.is_valid_point(pt) and st.matrix.would_be_grounded(pt) and st.matrix._ndarray[pt.x, pt.y, pt.z] == state.Voxel.MODEL:
@@ -64,10 +64,12 @@ def solve(st):
                             if path is not None:
                                 # print("got path")
                                 compress(st, bot, path)
-                            fill(st, bot, pt - a)
+                            elif len(bot.actions)==0:
+                                fill(st, bot, pt - a)
                             break
             else:
                 back_to_base(st, bot)
+
         while any(len(bot.actions)>0 for bot in st.bots):
             # for bot in st.bots:
             #     print(bot.pos)
@@ -75,6 +77,8 @@ def solve(st):
                 #     print(bot.actions[0])
             print("stepping")
             st.step()
+            
+            
 
 
 
