@@ -10,11 +10,21 @@ class Axis(Enum):
     def get(self, obj):
         return (obj.x, obj.y, obj.z)[self.value - 1]
 
-@dataclass
-class Coord:
-    x: int
-    y: int
-    z: int
+class Coord(tuple):
+    def __new__(self, x, y, z):
+        return tuple.__new__(self, (x, y, z))
+
+    @property
+    def x(self):
+        return self[0]
+
+    @property
+    def y(self):
+        return self[1]
+
+    @property
+    def z(self):
+        return self[2]
 
     def __add__(self, diff):
         return Coord(self.x + diff.dx, self.y + diff.dy, self.z + diff.dz)
@@ -28,18 +38,6 @@ class Coord:
         elif isinstance(other, Diff):
             return self + -other
 
-    def __len__(self):
-        return 3
-
-    def __getitem__(self, key):
-        return (self.x, self.y, self.z)[key]
-
-    def __repr__(self):
-        return (self.x, self.y, self.z).__repr__()
-
-    def __hash__(self):
-        return hash((self.x, self.y, self.z))
-    
     def adjacent(self, R):
         x,y,z = self.x,self.y,self.z
         adjs = [Coord(x+1,y,z), Coord(x-1,y,z), Coord(x,y+1,z), Coord(x,y-1,z), Coord(x,y,z+1), Coord(x,y,z-1)]
