@@ -194,10 +194,12 @@ class Matrix(Mapping):
         coords = self.to_fill()
         if bot: # sort coords by distance from bot
             coords.sort(key=lambda c: (c-bot.pos).mlen() + abs(c.y) * self.size)
+            minX = bot.region["minX"]
+            maxX = bot.region["maxX"]
             minZ = bot.region["minZ"]
             maxZ = bot.region["maxZ"]
             for c in coords:
-                if minZ <= c.z < maxZ:
+                if minZ <= c.z < maxZ and minX <= c.z < maxX:
                     if self.would_be_grounded(c):
                         return c
             else:
