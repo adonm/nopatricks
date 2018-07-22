@@ -198,7 +198,8 @@ class Matrix(Mapping):
             maxZ = bot.region["maxZ"]
             for c in coords:
                 if minZ <= c.z < maxZ:
-                    return c
+                    if self.would_be_grounded(c):
+                        return c
             else:
                 return None
         return coords[0]
