@@ -35,8 +35,8 @@ def next_best_point(st, bot=None):
 def fill(st, bot, dir):
     pts = [
         bot.pos + dir,
-        bot.pos + dir + FORWARD,
-        bot.pos + dir + BACK
+        bot.pos + dir + BACK,
+        bot.pos + dir + FORWARD
     ]
     for pt in pts:
         if st.matrix.is_valid_point(pt) and st.matrix.would_be_grounded(pt) and st.matrix._ndarray[pt.x, pt.y, pt.z] == state.Voxel.MODEL and (pt - bot.pos).mlen()==1:
@@ -51,8 +51,8 @@ def solve(st):
             # n+=1
             # if n>1000:
             #     return
-            pt = next_best_point(st, bot)
-            # pt = st.matrix.fill_next(bot)
+            # pt = next_best_point(st, bot)
+            pt = st.matrix.fill_next(bot)
             # print(bot.pos)
             # print("pt")
             # print(pt)
@@ -64,13 +64,12 @@ def solve(st):
                 else:
                     found = False
                     for a in pt.adjacent(st.R):
-                        if st.matrix[a].is_void():
+                        if not st.matrix._ndarray[a.x,a.y,a.z] & (state.Voxel.BOT | state.Voxel.FULL):
+                            # print("path")
                             path = shortest_path(st, bot, a)
                             # if len(path) > 10:
                             #     print(path)
-                            # print("path")
                             # print([b.pos for b in st.bots])
-                            # print(path)
                             if path is not None:
                                 # print("got path")
                                 compress(st, bot, path)
@@ -80,14 +79,10 @@ def solve(st):
                                 fill(st, bot, pt - a)
                                 found=True
                                 break
-                            else:
-                                raise ValueError( 'could not get to point! {}'.format(str(pt)) )
+                    else:
+                        print("bot at {} can't get to {} (no void adjacent)".format(bot.pos, pt))
                     if not found:
                         stuck_bots += 1
-            else:
-                stuck_bots+=1
-                # print("back to base")
-                back_to_base(st, bot)
         while any(len(bot.actions)>0 for bot in st.bots):
             # for bot in st.bots:
             #     print(bot.pos)
