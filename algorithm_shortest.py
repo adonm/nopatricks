@@ -37,7 +37,7 @@ def fill(st, bot, dir):
 def solve(st):
     n = 0
     while not st.is_model_finished():
-
+        stuck_bots=0
         for bot in st.bots:
             # print(bot)
             # n+=1
@@ -54,6 +54,7 @@ def solve(st):
                     # print("filling")
                     fill(st, bot, pt - bot.pos)
                 else:
+                    found = False
                     for a in pt.adjacent(st.R):
                         if not st.matrix._ndarray[a.x,a.y,a.z] & (state.Voxel.BOT | state.Voxel.FULL):
                             # print("path")
@@ -64,15 +65,16 @@ def solve(st):
                             if path is not None:
                                 # print("got path")
                                 compress(st, bot, path)
+                                found=True
+                                break
                             elif len(bot.actions)==0:
                                 fill(st, bot, pt - a)
-                            break
+                                found=True
+                                break
                     else:
                         print("bot at {} can't get to {} (no void adjacent)".format(bot.pos, pt))
-            else:
-                # print("back to base")
-                back_to_base(st, bot)
-
+                    if not found:
+                        stuck_bots += 1
         while any(len(bot.actions)>0 for bot in st.bots):
             # for bot in st.bots:
             #     print(bot.pos)
@@ -80,6 +82,10 @@ def solve(st):
                 #     print(bot.actions[0])
             # print("stepping")
             st.step()
+
+        if stuck_bots == len(st.bots):
+            raise ValueError( 'all bots stuck!' )
+            break
 
 
 def shortest_path_algo(st):
