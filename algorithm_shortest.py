@@ -25,16 +25,14 @@ def closest_best_point(st):
     print("pt ofund")
     return pt
 
-def fill_neighbours(st, bot):
+def fill_below(st, bot):
     pts = [
-        bot.pos + DOWN + LEFT,
-        bot.pos + DOWN + RIGHT,
+        bot.pos + DOWN,
         bot.pos + DOWN + FORWARD,
         bot.pos + DOWN + BACK
     ]
     for pt in pts:
-        
-        if st.matrix.is_valid_point(pt) and st.matrix.would_be_grounded(pt) and st.matrix[pt].is_void() and st.matrix[pt].is_model():
+        if st.matrix.is_valid_point(pt) and st.matrix.would_be_grounded(pt) and st.matrix._ndarray[pt.x, pt.y, pt.z] == state.Voxel.MODEL:
             bot.fill(pt - bot.pos)
 
 def shortest_path_algo(st):
@@ -45,14 +43,13 @@ def shortest_path_algo(st):
         pt = next_best_point(st)
         for a in pt.adjacent(st.R):
             # print(a)
-            if st.matrix[a].is_void():
-                path = shortest_path(st, st.bots[0], a)
+            if st.matrix[a].is_void() and a.y > pt.y:
+                path = shortest_path(st, bot, a)
                 # print(path)
                 if path is not None:
-                    compress(st, st.bots[0], path)
+                    compress(st, bot, path)
                     # print(st.bots[0].pos)
-                    bot.fill(pt - st.bots[0].pos)
-                    # fill_neighbours(st, st.bots[0])
+                    fill_below(st, bot)
                     break
             # print("done")
         # break
@@ -60,8 +57,7 @@ def shortest_path_algo(st):
 if __name__ == '__main__':
     problem = int(sys.argv[1])
     st = state.State.create(problem=problem)
-    import cProfile
-    cProfile.run('shortest_path_algo(st)', sort="calls")
+    shortest_path_algo(st)
     back_to_base(st, st.bots[0])
     st.bots[0].halt()
     st.step()
