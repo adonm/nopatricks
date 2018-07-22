@@ -19,7 +19,7 @@ def next_best_point(st, bot=None):
         if minX <= x < maxX and minZ <= z < maxZ:
             coord = Coord(int(x), int(y), int(z))
             if st.matrix.would_be_grounded(coord):
-                print(coord)
+                # print(coord)
                 return coord
     return None
 
@@ -60,9 +60,9 @@ def solve(st):
                     for a in pt.adjacent(st.R):
                         if st.matrix[a].is_void():
                             path = shortest_path(st, bot, a)
-                            print("path")
-                            print([b.pos for b in st.bots])
-                            print(path)
+                            # print("path")
+                            # print([b.pos for b in st.bots])
+                            # print(path)
                             if path is not None:
                                 # print("got path")
                                 compress(st, bot, path)
@@ -70,7 +70,7 @@ def solve(st):
                                 fill(st, bot, pt - a)
                             break
             else:
-                print("back to base")
+                # print("back to base")
                 back_to_base(st, bot)
 
         while any(len(bot.actions)>0 for bot in st.bots):
@@ -78,7 +78,7 @@ def solve(st):
             #     print(bot.pos)
                 # if len(bot.actions)>0:
                 #     print(bot.actions[0])
-            print("stepping")
+            # print("stepping")
             st.step()
             
             

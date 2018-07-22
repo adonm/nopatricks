@@ -44,13 +44,13 @@ def next_move(st, bot, path):
     k -= 1
     
     if i!=j and k!=j:
-        print("next_mvoe lmove")
-        print(path[j] - path[i])
-        print(path[k] - path[j])
+        # print("next_mvoe lmove")
+        # print(path[j] - path[i])
+        # print(path[k] - path[j])
         bot.lmove(path[j] - path[i], path[k] - path[j])
         return k
     elif i+1<len(path):
-        print("next_mvoe smove")
+        # print("next_mvoe smove")
         # print(path[i+1] - path[i])
         bot.smove(path[i+1] - path[i])
         return i+1

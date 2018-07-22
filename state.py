@@ -447,7 +447,7 @@ class Bot(object): # nanobot
     })
 
     def __getattr__(self, name):
-        print(name)
+        # print(name)
         if hasattr(self, "_" + name) and not name.startswith("_"):
             fn = getattr(self, "_" + name)
             def queuefn(*args, **kwargs):
@@ -471,7 +471,7 @@ class Bot(object): # nanobot
             self.state.trace.append( commands.Flip() )
 
     def _smove(self, diff):
-        print("smove")
+        # print("smove")
         dest = self.pos + diff
         if dest in self.state.current_moves:
             self._wait()
@@ -505,13 +505,13 @@ class Bot(object): # nanobot
         dest = self.pos + diff1 + diff2
 
         # print("lpath")
-        print(self.pos)
-        print(diff1)
-        print(diff2)
-        print(self.get_lpath(diff1, diff2))
-        print([self.state.matrix[p].is_void() for p in self.get_lpath(diff1, diff2)])
-        print([self.state.matrix[p].val for p in self.get_lpath(diff1, diff2)])
-        print(not all( self.state.matrix[p].is_void() for p in self.get_lpath(diff1, diff2)))
+        # print(self.pos)
+        # print(diff1)
+        # print(diff2)
+        # print(self.get_lpath(diff1, diff2))
+        # print([self.state.matrix[p].is_void() for p in self.get_lpath(diff1, diff2)])
+        # print([self.state.matrix[p].val for p in self.get_lpath(diff1, diff2)])
+        # print(not all( self.state.matrix[p].is_void() for p in self.get_lpath(diff1, diff2)))
 
         moves = [p for p in self.get_lpath(diff1, diff2)]
 
