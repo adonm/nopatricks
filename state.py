@@ -8,6 +8,7 @@ from textwrap import wrap
 import os
 import math
 from dataclasses import dataclass, astuple, field
+import numpy as np
 
 class Voxel:
     """ Voxel represents mutable location information """
@@ -19,6 +20,8 @@ class Voxel:
     GROUNDED = 1 << 1
     # the model bit is on if this location forms part of the target model
     MODEL = 1 << 2
+    # the bot bit is on if this location has a bot at it
+    BOT = 1 << 3
 
 
     def __init__(self, val):
@@ -33,7 +36,7 @@ class Voxel:
 
     # access to state is via functions so the implementation is free to change
     def is_void(self):
-        return not self.val & Voxel.FULL
+        return not (self.is_full() or self.is_bot())
 
     def is_full(self):
         return self.val & Voxel.FULL
@@ -41,11 +44,14 @@ class Voxel:
     def is_grounded(self):
         return self.val & Voxel.GROUNDED
 
+    def is_bot(self):
+        return self.val & Voxel.BOT
+
     def is_model(self):
         return self.val & Voxel.MODEL
 
     def __repr__(self):
-        return hex(self.val)[2] # just display first 4 bits in mask as hex
+        return repr(self.val)
 
 
 class Matrix(Mapping):
@@ -60,16 +66,13 @@ class Matrix(Mapping):
         self.model_pts = None
         if 'size' in kwargs:
             self.size = kwargs['size']
-            self.state = [Voxel.empty() for i in range(self.size ** 3)]
+            self.state.flat = [Voxel.empty().val for i in range(self.size ** 3)]
         elif 'filename' in kwargs:
             self.size, self.state = Matrix._load_file(kwargs['filename'])
         else:
             self.size, self.state = Matrix._load_prob(kwargs.get('problem', 1))
         
-        self.nmodel = len([v for v in self.state if v.is_model()])
-
-    def is_valid_point(self, pt):
-        return pt.x>0 and pt.y>0 and pt.z>0 and pt.x<self.size and pt.y<self.size and pt.z<self.size
+        self.nmodel = len([self[v] for v in self if self[v].is_model()])
 
     @property
     def num_modelled(self):
@@ -84,17 +87,22 @@ class Matrix(Mapping):
         with open(filename, 'rb') as fb:
             bytedata = fb.read()
             size = int(bytedata[0])
-            state = []
+            state = np.zeros(shape=(size, size, size), dtype=np.dtype('u1'))
+            index = 0
             for byte in bytedata[1:]:
                 for bit in to_uint64_le( unpack_bits( byte ) ):
-                    state.append(Voxel.empty(bit))
+                    state.flat[index] = Voxel.empty(bit).val
+                    index += 1
             return size, state
+
+    def is_valid_point(self, coord):
+        return (0 <= coord.x < self.size) and (0 <= coord.y < self.size) and (0 <= coord.z < self.size)
 
     def coord_index(self, coord):
         if not isinstance(coord, Coord):
             raise TypeError()
-        assert (0 <= coord.x < self.size) and (0 <= coord.y < self.size) and (0 <= coord.z < self.size)
-        return coord.x * self.size * self.size + coord.y * self.size + coord.z
+        assert self.is_valid_point(coord)
+        return (coord.x, coord.y, coord.z)
 
     def in_range(self, val):
         if isinstance(val, int):
@@ -117,10 +125,10 @@ class Matrix(Mapping):
         return self.size ** 3
 
     def __getitem__(self, key):
-        return self.state[self.coord_index(key)]
+        return Voxel(self.state[self.coord_index(key)])
 
-    def __setitem__(self, key, value):
-        self.state[self.coord_index(key)] = value
+    def __setitem__(self, key, voxel):
+        self.state[self.coord_index(key)] = voxel.val
 
     def ground_adjacent(self, gc):
         stack = [gc]
@@ -167,23 +175,19 @@ class Matrix(Mapping):
 
     def yplane(self, y):
         """ Returns a view into this matrix at a constant y """
-        return MatrixPlane(self, y=y)
+        return MatrixYPlane(self, y=y)
 
     def __repr__(self):
         return "size: {}, model/full/grounded: {}/{}/{}".format(self.size, self.nmodel, self.nfull, self.ngrounded)
 
 
-class MatrixPlane(Mapping):
-    def __init__(self, matrix, **kwargs):
+class MatrixYPlane(Mapping):
+    def __init__(self, matrix, y):
         self.matrix = matrix
-        if 'x' in kwargs:
-            self.keygen = lambda tup : Coord(kwargs['x'], tup[0], tup[1])
-        elif 'y' in kwargs:
-            self.keygen = lambda tup : Coord(tup[0], kwargs['y'], tup[1])
-        elif 'z' in kwargs:
-            self.keygen = lambda tup : Coord(tup[0], tup[1], kwargs['z'])
-        else:
-            raise ValueError("invalid plane")
+        self.y = y
+
+    def keygen(self, tup):
+        return Coord(tup[0], self.y, tup[1])
 
     def keys(self):
         for u in range(self.matrix.size):
@@ -202,13 +206,8 @@ class MatrixPlane(Mapping):
     def __setitem__(self, key, value):
         self.matrix[self.keygen(key)] = value
 
-    def asciigrid(self):
-        grid = wrap("".join([repr(self[k]) for k in self]), self.matrix.size)
-        grid.reverse() # display bottom left as x=0,z=0
-        return grid
-
     def __repr__(self):
-        return("\n".join(self.asciigrid()))
+        return repr(self.matrix.state[:,self.y,:])
 
     def adjacent(self, key):
         deltas = [(-1, 0), (1, 0), (0, -1), (0, 1)]
@@ -385,16 +384,8 @@ class Bot(object): # nanobot
         if self.state.enable_trace:
             self.state.trace.append( commands.GVoid().set_nd( nd.dx, nd.dy, nd.dz ).set_fd( fd.dx, fd.dy, fd.dz ) )
 
-
     def __repr__(self):
-        output = self.state.matrix.yplane(self.pos.y).asciigrid()
-        output.reverse()
-        botrow = list(output[self.pos.x])
-        botrow[self.pos.z] = "B"
-        output[self.pos.x] = "".join(botrow)
-        output.reverse()
-        output = ["Bot: {}, Seeds: {}\n".format(self.bid, self.seeds)] + output
-        return("\n".join(output))
+        return "Bot: {}, Seeds: {}\n\n{}".format(self.bid, self.seeds, repr(self.state.matrix.state[:, self.pos.y, :]))
 
         
 
