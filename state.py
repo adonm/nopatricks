@@ -432,11 +432,13 @@ class Bot(object): # nanobot
     actions: list = field(default_factory = list)
 
     def __getattr__(self, name):
-        if hasattr(self, "_" + name):
+        if hasattr(self, "_" + name) and not name.startswith("_"):
             fn = getattr(self, "_" + name)
             def queuefn(*args, **kwargs):
                 self.actions.append(lambda: fn(*args, **kwargs))
             return queuefn
+        else:
+            raise AttributeError
 
     def _halt(self):
         if len(self.state.bots) > 1:
