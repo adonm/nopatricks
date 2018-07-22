@@ -191,16 +191,20 @@ class Matrix(Mapping):
         return [Coord(int(x), int(y), int(z)) for x,y,z in np.transpose(np.where(self._ndarray == Voxel.MODEL))]
 
     def fill_next(self, bot=None):
-        coords = self.to_fill()
         if bot: # sort coords by distance from bot
-            coords.sort(key=lambda c: (c-bot.pos).mlen() + abs(c.y) * self.size)
+            if hasattr(bot, "pcache") and (bot.pcache["pos"] - bot.pos).mlen() < 15:
+                coords = bot.pcache["coords"]
+            else:
+                coords = self.to_fill()
+                coords.sort(key=lambda c: (c-bot.pos).mlen() + abs(c.y) * self.size)
+                bot.pcache = {"pos": bot.pos, "coords": coords}
             minX = bot.region["minX"]
             maxX = bot.region["maxX"]
             minZ = bot.region["minZ"]
             maxZ = bot.region["maxZ"]
             for c in coords:
                 if minZ <= c.z < maxZ and minX <= c.z < maxX:
-                    if self.would_be_grounded(c):
+                    if self[c].is_void() and self.would_be_grounded(c):
                         return c
             else:
                 return None
@@ -363,8 +367,7 @@ class Bot(object): # nanobot
     })
 
     def __getattr__(self, name):
-        # print(name)
-        if hasattr(self, "_" + name) and not name.startswith("_"):
+        if not name.startswith("_") and hasattr(self, "_" + name):
             fn = getattr(self, "_" + name)
             def queuefn(*args, **kwargs):
                 self.actions.append(lambda: fn(*args, **kwargs))
