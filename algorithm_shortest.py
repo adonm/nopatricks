@@ -11,10 +11,12 @@ from math import floor
 def next_best_point(st, bot=None):
     minX = bot.region["minX"]
     maxX = bot.region["maxX"]
+    minZ = bot.region["minZ"]
+    maxZ = bot.region["maxZ"]
     # print(bot.region)
         
     for y, x, z in np.transpose(np.where(np.transpose(st.matrix._ndarray, (1, 0, 2)) == state.Voxel.MODEL)):
-        if minX <= x < maxX:
+        if minX <= x < maxX and minZ <= z < maxZ:
             coord = Coord(int(x), int(y), int(z))
             if st.matrix.would_be_grounded(coord):
                 print(coord)
@@ -38,7 +40,7 @@ def fill(st, bot, dir):
         bot.pos + dir + BACK
     ]
     for pt in pts:
-        if st.matrix.is_valid_point(pt) and st.matrix.would_be_grounded(pt) and st.matrix._ndarray[pt.x, pt.y, pt.z] == state.Voxel.MODEL:
+        if st.matrix.is_valid_point(pt) and st.matrix.would_be_grounded(pt) and st.matrix._ndarray[pt.x, pt.y, pt.z] == state.Voxel.MODEL and (pt - bot.pos).mlen()==1:
             bot.fill(pt - bot.pos)
 
 def solve(st):
@@ -68,6 +70,7 @@ def solve(st):
                                 fill(st, bot, pt - a)
                             break
             else:
+                print("back to base")
                 back_to_base(st, bot)
 
         while any(len(bot.actions)>0 for bot in st.bots):
@@ -79,9 +82,6 @@ def solve(st):
             st.step()
             
             
-
-
-
 def shortest_path_algo(st):
     bot = st.bots[0]
     bot.smove(UP)
@@ -99,27 +99,27 @@ def shortest_path_algo(st):
 
     bot.region = {
         "minX": 0,
-        "maxX": floor(st.R/2),
-        # minY: 0,
-        # maxY: st.R,
-        # minZ: 0,
-        # maxZ: st.R,
+        "maxX": st.R,
+        "minY": 0,
+        "maxY": st.R,
+        "minZ": 0,
+        "maxZ": floor(st.R/2),
     }
     st.bots[1].region = {
-        "minX": floor(st.R/2),
+        "minX": 0,
         "maxX": st.R,
-        # minY: 0,
-        # maxY: st.R,
-        # minZ: 0,
-        # maxZ: st.R,
+        "minY": 0,
+        "maxY": st.R,
+        "minZ": floor(st.R/2),
+        "maxZ": st.R,
     }
 
     solve(st)
     print("finished solve")
 
-
     while len(bot.actions) > 0:
         st.step()
+
     for a in bot.pos.adjacent(st.R):
         if st.matrix[a].is_void():
             path = shortest_path(st, bot2, a)
@@ -158,8 +158,9 @@ if __name__ == '__main__':
     problem = int(sys.argv[1])
     st = state.State.create(problem=problem)
     shortest_path_algo(st)
-    for bot in st.bots:
-        bot.halt()
+    bot = st.bots[0]
+    back_to_base(st, bot)
+    bot.halt()
 
     while st.step():
         pass

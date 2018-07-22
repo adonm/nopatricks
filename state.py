@@ -246,6 +246,7 @@ class State(object):
     secondary_fuse_bots: list = field(default_factory = list)
     default_energy: int = 1
     enable_trace: bool = True
+    current_moves: list = field(default_factory = list)
 
     @property
     def R(self):
@@ -279,7 +280,7 @@ class State(object):
                 return b
 
     def step(self):
-
+        self.current_moves=[]
         if len([ bot for bot in self.bots if len(bot.actions) > 0 ]) == 0:
             return False
 
@@ -472,6 +473,10 @@ class Bot(object): # nanobot
     def _smove(self, diff):
         print("smove")
         dest = self.pos + diff
+        if dest in self.state.current_moves:
+            self._wait()
+            return
+        self.state.current_moves.append(dest)
         if not self.state.matrix[dest].is_void():
             self.actions = []
             self._wait()
@@ -507,6 +512,18 @@ class Bot(object): # nanobot
         print([self.state.matrix[p].is_void() for p in self.get_lpath(diff1, diff2)])
         print([self.state.matrix[p].val for p in self.get_lpath(diff1, diff2)])
         print(not all( self.state.matrix[p].is_void() for p in self.get_lpath(diff1, diff2)))
+
+        moves = [p for p in self.get_lpath(diff1, diff2)]
+
+        for m in moves:
+            if m in self.state.current_moves:
+                print("can't lmvove interference")
+                # self._smove(UP.mul(self.bid))
+                self._wait()
+                return
+        
+        self.state.current_moves += moves
+
         if not all(self.state.matrix[p].is_void() for p in self.get_lpath(diff1, diff2)):
             self.actions = []
             print("can't lmvove")

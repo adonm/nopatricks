@@ -90,7 +90,7 @@ def pointcost(st, src, dest):
 def shortest_path(st, bot, c):
     if bot.pos == c:
         return []
-    assert st.matrix[c].is_void()
+    # assert st.matrix[c].is_void()
     seen = set()
     q = Q.PriorityQueue()
 
@@ -127,7 +127,10 @@ def shortest_path(st, bot, c):
     return list(reversed(path))
 
 def back_to_base(st, bot):
-    path = shortest_path(st, bot, Coord(0,0,0))
+    base = Coord(0,0,bot.bid-1)
+    # if st.matrix[base].is_bot():
+    #     return
+    path = shortest_path(st, bot, base)
     if path is not None:
         compress(st, bot, path)
     
