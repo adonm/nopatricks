@@ -8,7 +8,7 @@ from algorithm import *
 import numpy as np
 
 def next_best_point(st):
-    for x, y, z in np.transpose(np.where(st.matrix._ndarray == state.Voxel.MODEL)):
+    for y, x, z in np.transpose(np.where(np.transpose(st.matrix._ndarray, (1, 0, 2)) == state.Voxel.MODEL)):
         coord = Coord(int(x), int(y), int(z))
         if st.matrix.would_be_grounded(coord):
             return coord
@@ -23,11 +23,11 @@ def closest_best_point(st):
     pt = zcoords.pop()
     return pt
 
-def fill_below(st, bot):
+def fill(st, bot, dir):
     pts = [
-        bot.pos + DOWN,
-        bot.pos + DOWN + FORWARD,
-        bot.pos + DOWN + BACK
+        bot.pos + dir,
+        bot.pos + dir + FORWARD,
+        bot.pos + dir + BACK
     ]
     for pt in pts:
         if st.matrix.is_valid_point(pt) and st.matrix.would_be_grounded(pt) and st.matrix._ndarray[pt.x, pt.y, pt.z] == state.Voxel.MODEL:
@@ -41,11 +41,11 @@ def shortest_path_algo(st):
     while not st.is_model_finished():
         pt = next_best_point(st)
         for a in pt.adjacent(st.R):
-            if st.matrix[a].is_void() and a.y > pt.y:
+            if st.matrix[a].is_void():
                 path = shortest_path(st, bot, a)
                 if path is not None:
                     compress(st, bot, path)
-                fill_below(st, bot)
+                fill(st, bot, pt - a)
                 break
 
 
