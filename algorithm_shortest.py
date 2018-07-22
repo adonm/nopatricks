@@ -22,6 +22,13 @@ def next_best_point(st, bot=None):
             if st.matrix.would_be_grounded(coord):
                 # print(coord)
                 return coord
+
+    for y, x, z in np.transpose(np.where(np.transpose(st.matrix._ndarray, (1, 0, 2)) == state.Voxel.MODEL)):
+        coord = Coord(int(x), int(y), int(z))
+        if st.matrix.would_be_grounded(coord):
+            # print(coord)
+            return coord
+
     return None
 
 def fill(st, bot, dir):
@@ -94,7 +101,7 @@ def shortest_path_algo(st):
 
     minX, maxX, minY, maxY, minZ, maxZ = st.matrix.bounds
     print(st.matrix.bounds)
-    minarea, maxbots = 5 * 5, 39
+    minarea, maxbots = 5 * 5, 20
     width, depth = maxX - minX, maxZ - minZ
     mostarea = width * depth / maxbots
     rsize = ceil(sqrt(max(mostarea, minarea)))
@@ -122,7 +129,7 @@ def shortest_path_algo(st):
 
     for i in range(1, nbots):
         # print(st.bots[0].seeds)
-        st.bots[0].fission(FORWARD, 1)
+        st.bots[0].fission(FORWARD, 0)
         st.step_all()
         b = st.bots[i]
         b.region = regions[nbots-i-1]
