@@ -6,7 +6,7 @@ import sys, os
 import math
 from algorithm import *
 import numpy as np
-from math import floor, ceil
+from math import floor, ceil, sqrt
 import cProfile
 
 def next_best_point(st, bot=None):
@@ -86,21 +86,29 @@ def shortest_path_algo(st):
     bot.smove(UP)
 
     minX, maxX, minY, maxY, minZ, maxZ = st.matrix.bounds
-    depth = maxZ - minZ
-    split = 7
-    nbots = ceil(depth / split)
-    print("nbots: "+str(nbots))
-    region = []
-    for i in range(nbots):
-        region.append({
-            "minX": minX,
-            "maxX": maxX,
-            "minY": minY,
-            "maxY": maxY,
-            "minZ": minZ + i * split,
-            "maxZ": min([maxZ, minZ + (i+1) * split])+1
-        })
-    # print(region)
+    print(st.matrix.bounds)
+    minarea, maxbots = 5 * 5, 39
+    width, depth = maxX - minX, maxZ - minZ
+    mostarea = width * depth / maxbots
+    rsize = ceil(sqrt(max(mostarea, minarea)))
+    xbots, zbots = max(floor(width / rsize), 1), max(floor(depth / rsize), 1)
+    nbots = xbots * zbots
+    print("nbots: {}".format(nbots))
+    regions = []
+    for x in range(xbots):
+        rX = min([maxX, minX + (x+1) * rsize])
+        if maxX - rX < rsize:
+            rX = maxX
+        for z in range(zbots):
+            rZ = min([maxZ, minZ + (z+1) * rsize])
+            if maxZ - rZ < rsize:
+                rZ = maxZ
+            regions.append({
+                "minX": int(minX + x * rsize),
+                "maxX": int(rX),
+                "minZ": int(minZ + z * rsize),
+                "maxZ": int(rZ)
+            })
     # print(convex_hull(st))
     # print(st.matrix.bounds)
     st.step_all()
@@ -109,11 +117,18 @@ def shortest_path_algo(st):
         # print(st.bots[0].seeds)
         st.bots[0].fission(FORWARD, 1)
         st.step_all()
-        for j in range(region[nbots-i]["minZ"]):
-            st.bots[i].smove(FORWARD)
+        b = st.bots[i]
+        b.region = regions[nbots-i-1]
+        path = shortest_path(st, b, Coord(b.region["minX"], 1, b.region["minZ"]))
+        if path:
+            compress(st, b, path)
         st.step_all()
-    for i in range(nbots):
-        st.bots[i].region = region[i]
+    b = st.bots[0]
+    b.region = regions[nbots-1]
+    path = shortest_path(st, b, Coord(b.region["minX"], 1, b.region["minZ"]))
+    if path:
+        compress(st, b, path)
+    st.step_all()
 
     solve(st)
     print("finished solve")
