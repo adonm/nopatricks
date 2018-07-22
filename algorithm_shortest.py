@@ -17,12 +17,10 @@ zcoords = []
 def closest_best_point(st):
     bot = st.bots[0]
     global zcoords
-    print("closest best pt")
     if len(zcoords) == 0:
         zcoords = st.matrix.fill_next(bot.pos + DOWN)
         zcoords.reverse()
     pt = zcoords.pop()
-    print("pt ofund")
     return pt
 
 def fill_below(st, bot):
@@ -35,6 +33,7 @@ def fill_below(st, bot):
         if st.matrix.is_valid_point(pt) and st.matrix.would_be_grounded(pt) and st.matrix._ndarray[pt.x, pt.y, pt.z] == state.Voxel.MODEL:
             bot.fill(pt - bot.pos)
 
+
 def shortest_path_algo(st):
     bot = st.bots[0]
     bot.smove(UP)
@@ -42,17 +41,13 @@ def shortest_path_algo(st):
     while not st.is_model_finished():
         pt = next_best_point(st)
         for a in pt.adjacent(st.R):
-            # print(a)
             if st.matrix[a].is_void() and a.y > pt.y:
                 path = shortest_path(st, bot, a)
-                # print(path)
                 if path is not None:
                     compress(st, bot, path)
-                    # print(st.bots[0].pos)
-                    fill_below(st, bot)
-                    break
-            # print("done")
-        # break
+                fill_below(st, bot)
+                break
+
 
 if __name__ == '__main__':
     problem = int(sys.argv[1])

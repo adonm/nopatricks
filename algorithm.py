@@ -91,14 +91,18 @@ def shortest_path(st, bot, c):
     q = Q.PriorityQueue()
 
     seen.add(bot.pos)
-    q.put(PriorityCoord((c-bot.pos).magnitude_sqrd(), bot.pos))
+    q.put(PriorityCoord((c-bot.pos).mlen(), bot.pos))
 
     table = {}
     # print("searching short")
     # print(bot.pos)
     # print(c)
     found = False
+    searchdepth = 0
     while not found and not q.empty():
+        searchdepth += 1
+        if searchdepth % 10 == 0:
+            print("shortest path search: {}".format(searchdepth))
         # print("while")
         p = q.get().coord
         # print(p)
@@ -119,7 +123,9 @@ def shortest_path(st, bot, c):
         path.append(x)
         x = table[x]
     path.append(bot.pos)
-    return list(reversed(path))
+    output = list(reversed(path))
+    if searchdepth > 10:
+        print(output)
 
 def back_to_base(st, bot):
     compress(st, bot, shortest_path(st, bot, Coord(0,0,0)))

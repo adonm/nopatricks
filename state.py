@@ -173,9 +173,7 @@ class Matrix(Mapping):
         return p.y == 0 or len([n for n in p.adjacent(self.size) if self._ndarray[(n.x,n.y,n.z)] & Voxel.GROUNDED]) > 0
 
     def to_fill(self):
-        if self.model_pts is None:
-            self.model_pts = [k for k in self if self[k].is_model()]
-        return [x for x in self.model_pts if self[x].is_void()]
+        return [Coord(int(x), int(y), int(z)) for x,y,z in np.transpose(np.where(self._ndarray == Voxel.MODEL))]
         
     def fill_next(self, nearc=None): # ordered list of next coord that model wants filled that would be grounded
         coords = self.to_fill()
