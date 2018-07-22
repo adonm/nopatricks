@@ -84,49 +84,58 @@ def unprint(cmds):
                 mapping[sec] = map_acc
                 map_acc += 1
 
+    mapping_rev = {v: k for k, v in mapping.items()}
     print(mapping)
 
-    return changes, mapping
+    #return changes, mapping
 
     bots = [{'id': 1, 'x': 0, 'y': 0, 'z': 0}]
-    bot_acc = 2
     time = 0
-    result = []
+    result = [commands.Halt()]
     instructions = iter(cmds)
-    while True:
+
+    end = False
+    while not end:
         buffer = [(mapping[b['id']], next(instructions)) for b in bots]
         # replace merges with splits and vice versa
         if time in changes:
             for prim, sec in changes[time]['splits']:
+                fiss = buffer.pop(next(i for i, x in enumerate(buffer) if x[0]==mapping[prim]))[1]
                 primbot = next(b for b in bots if b['id'] == prim) 
-                secbot = next(b for b in bots if b['id'] == sec) 
-                
-                fus_inst = buffer.pop(buffer.index(key=lambda x: x[0]==mapping[prim]))
-                
-                buffer.append((mapping[prim], command.FusionP().set_nd() ))
-                buffer.append((mapping[sec], command.FusionS().set_nd() ))
-            for prim, sec in changes[time]['merges']:
-                buffer.pop(buffer.index(key=lambda x: x[0]==mapping[sec]))
-        buffer.sort(key=lambda x: x[0])
-        
-        new_bots = []
-        dead_bots = []
+                secbot = {'id': sec, 'x': primbot['x']+fiss.ndx, 'y': primbot['y']+fiss.ndy, 'z': primbot['y']+fiss.ndy}
+                bots.append(secbot) 
 
+                buffer.append((mapping[prim], commands.FusionP().set_nd(secbot['x']-primbot['x'], secbot['y']-primbot['y'], secbot['z']-primbot['z']) ))
+                buffer.append((mapping[sec], commands.FusionS().set_nd(primbot['x']-secbot['x'], primbot['y']-secbot['y'], primbot['z']-secbot['z']) ))
+
+            for prim, sec in changes[time]['merges']:
+                fusp = buffer.pop(next(i for i, x in enumerate(buffer) if x[0]==mapping[prim]))[1]
+                fuss = buffer.pop(next(i for i, x in enumerate(buffer) if x[0]==mapping[sec]))[1]
+                primbot = next(b for b in bots if b['id'] == prim)
+                secbot = next(b for b in bots if b['id'] == sec)
+
+                buffer.append((mapping[prim], commands.Fission().set_nd(fusp.ndx, fusp.ndy, fusp.ndz)))
+                bots.remove(secbot)
+
+
+        buffer.sort(key=lambda x: -x[0])
+        
         for bot_id, instr in buffer:
+            print((bot_id, instr, bots))
             klass = type(instr)
             # most instructions we can pass through
-            if klass in (commands.Halt, commands.Wait, commands.Flip):
+            if klass in (commands.Wait, commands.Flip):
                 result.append(instr)
             # reverse move instructions
             elif klass == commands.SMove:
-                bot = next(b for b in bots if b['id'] == bot_id)
+                bot = next(b for b in bots if b['id'] == mapping_rev[bot_id])
                 bot['x'] += instr.lldx
                 bot['y'] += instr.lldy
                 bot['z'] += instr.lldz
                 mod = commands.SMove().set_lld( -instr.lldx, -instr.lldy, -instr.lldz )
                 result.append(mod)
             elif klass == commands.LMove:
-                bot = next(b for b in bots if b['id'] == bot_id)
+                bot = next(b for b in bots if b['id'] == mapping_rev[bot_id])
                 bot['x'] += instr.sld1x+instr.sld2x
                 bot['y'] += instr.sld1y+instr.sld2y
                 bot['z'] += instr.sld1z+instr.sld2z
@@ -147,15 +156,26 @@ def unprint(cmds):
             elif klass in (commands.Fission, commands.FusionP, commands.FusionS):
                 # we've intercepted and modified these in advance
                 result.append(instr)
+
+            elif klass == commands.Halt:
+                end = True
         
+        bots.extend(new_bots)
+        for b in dead_bots:
+            bots.remove(b)
         time += 1
 
-    """
-    return
+    return reversed(result)
     
     
 
 def test():
     f = open('submission/FA001.nbt', 'rb').read()
     cmds = commands.read_nbt(f)
-    unprint(cmds)
+    res = unprint(cmds)
+    
+    data = commands.export_nbt( res )
+    g = open('submission/FD001.nbt', 'wb')
+    g.write(data)
+    g.close()
+
