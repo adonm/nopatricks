@@ -72,6 +72,8 @@ class Matrix(Mapping):
             self._ndarray.flat = np.zeros(shape=(size, size, size), dtype=np.dtype('u1'))
         elif 'filename' in kwargs:
             self.size, self._ndarray = Matrix._load_file(kwargs['filename'])
+        elif 'fileobj' in kwargs:
+            self.size, self._ndarray = Matrix._load_fileobj(kwargs['fileobj'])
         else:
             self.size, self._ndarray = Matrix._load_prob(kwargs.get('problem', 1))
 
@@ -110,16 +112,20 @@ class Matrix(Mapping):
 
     @staticmethod
     def _load_file(filename):
-        with open(filename, 'rb') as fb:
-            bytedata = fb.read()
-            size = int(bytedata[0])
-            ndarray = np.zeros(shape=(size, size, size), dtype=np.dtype('u1'))
-            index = 0
-            for byte in bytedata[1:]:
-                for bit in to_uint64_le( unpack_bits( byte ) ):
-                    ndarray.flat[index] = Voxel.empty(bit).val
-                    index += 1
-            return size, ndarray
+        with open(filename, 'rb') as fp:
+            return Matrix._load_fileobj(fp)
+
+    @staticmethod
+    def _load_fileobj(fp):
+        bytedata = fp.read()
+        size = int(bytedata[0])
+        ndarray = np.zeros(shape=(size, size, size), dtype=np.dtype('u1'))
+        index = 0
+        for byte in bytedata[1:]:
+            for bit in to_uint64_le( unpack_bits( byte ) ):
+                ndarray.flat[index] = Voxel.empty(bit).val
+                index += 1
+        return size, ndarray
 
     def is_valid_point(self, coord):
         return (0 <= coord.x < self.size) and (0 <= coord.y < self.size) and (0 <= coord.z < self.size)
@@ -299,14 +305,15 @@ class State(object):
         return math.log2(self.R)*1000
 
     @classmethod
-    def create(cls, problem=1):
-        self = cls(Matrix(problem=problem))
+    def create(cls, **kwargs):
+        self = cls(Matrix(**kwargs))
         bot = Bot(state=self)
         self.matrix.toggle_bot(bot.pos) # enter voxel
         self.bots.append(bot)
-        test = 'dfltEnergy/LA{:03d}'.format(problem)
-        if os.path.isfile(test):
-            self.default_energy = int(open(test, 'r').read(), 0)
+        if 'problem' in kwargs:
+            test = 'dfltEnergy/LA{:03d}'.format(kwargs['problem'])
+            if os.path.isfile(test):
+                self.default_energy = int(open(test, 'r').read(), 0)
         return self
 
     def is_model_finished(self):

@@ -203,15 +203,14 @@ def shortest_path_algo(st):
 
 
 
-if __name__ == '__main__':
-    problem = int(sys.argv[1])
-    suffix = ""
-    st = state.State.create(problem=problem)
+def main(*args, **kwargs):
+    success = True
+    st = state.State.create(*args, **kwargs)
     try:
-        cProfile.run("shortest_path_algo(st)", sort="cumulative")
+        cProfile.runctx('shortest_path_algo(st)', {}, {'st': st, 'shortest_path_algo': shortest_path_algo}, sort='cumulative')
     except Exception as e:
         print(e)
-        suffix = "_failed"
+        success = False
 
     bot = st.bots[0]
 
@@ -234,6 +233,13 @@ if __name__ == '__main__':
 
     while st.step():
         pass
+    return st, success
+
+
+if __name__ == '__main__':
+    problem = int(sys.argv[1])
+    st, success = main(problem=problem)
+    suffix = '_failed' if not success else ''
 
     print( st )
     print( 'energy: {}, default: {}, score: {:0.3f}/{:0.3f}'.format( st.energy, st.default_energy, st.score, st.score_max ) )

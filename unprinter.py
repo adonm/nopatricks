@@ -4,7 +4,7 @@ import sys
 import commands
 from mrcrowbar import utils
 
-def unprint(cmds):
+def unprint(cmds, skip_halt=False):
     
     # so the real trick is keeping track of the fission and fusion commands.
     # when fissioning, the new bot is always added to the end of the buffer for each timestep
@@ -98,7 +98,9 @@ def unprint(cmds):
     # bots are stored here with the normal unmapped ID
     bots = [{'id': 1, 'x': 0, 'y': 0, 'z': 0}]
     time = 0
-    result = [commands.Halt()]
+    result = []
+    if not skip_halt:
+        result.append(commands.Halt())
     instructions = iter(cmds)
 
     end = False
@@ -155,12 +157,9 @@ def unprint(cmds):
                 mod = commands.Fill().set_nd( instr.ndx, instr.ndy, instr.ndz )
                 result.append(mod)
             elif klass == commands.GFill:
-                raise RuntimeError('FIXME: GFill not supported')
-            #    mod = commands.GVoid().
+                mod = commands.GVoid().set_nd( instr.ndx, instr.ndy, instr.ndz ).set_fd( instr.fdx, instr.fdy, instr.fdz )
             elif klass == commands.GVoid:
-                raise RuntimeError('FIXME: GVoid not supported')
-            #    mod = commands.GFill().
-            
+                mod = commands.GFill().set_nd( instr.ndx, instr.ndy, instr.ndz ).set_fd( instr.fdx, instr.fdy, instr.fdz )
             elif klass in (commands.Fission, commands.FusionP, commands.FusionS):
                 # we've intercepted and modified these in advance
                 result.append(instr)
