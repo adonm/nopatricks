@@ -152,7 +152,7 @@ def shortest_path_algo(st):
 
     minX, maxX, minY, maxY, minZ, maxZ = st.matrix.bounds
     print(st.matrix.bounds)
-    minarea, maxbots = 4 * 4, 20
+    minarea, maxbots = 6 * 6, 20
     width, depth = maxX - minX, maxZ - minZ
     mostarea = width * depth / maxbots
     rsize = ceil(sqrt(max(mostarea, minarea)))
