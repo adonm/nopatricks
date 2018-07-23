@@ -194,10 +194,16 @@ class Matrix(Mapping):
             return False
         return p.y == 0 or len([n for n in p.adjacent(self.size) if self._ndarray[(n.x,n.y,n.z)] & Voxel.GROUNDED]) > 0
 
+
     def to_fill(self, limit, r):
+        USE_NEW_COORD_FILTER=False
         # numpy hax for more speed
-        cs = np.transpose(np.where(self._ndarray & (Voxel.MODEL | Voxel.BOT)))
-        coords = cs[(r["minX"] <= cs[:,0]) & (r["maxX"] > cs[:,0]) & (r["minZ"] <= cs[:,2]) & (r["maxZ"] > cs[:,2])]
+        if USE_NEW_COORD_FILTER:
+            cs = np.transpose(np.where(self._ndarray & (Voxel.MODEL | Voxel.BOT)))
+            cs[(r["minX"] <= cs[:,0]) & (r["maxX"] > cs[:,0]) & (r["minZ"] <= cs[:,2]) & (r["maxZ"] > cs[:,2])]
+        else:
+            cs = np.transpose(np.where(self._ndarray == Voxel.MODEL))
+            coords = cs
         # sort by column 1 (y) and limit to only limit records before instantiating coord objects
         return [Coord(int(x), int(y), int(z)) for x,y,z in coords[coords[:,1].argsort()][:limit]]
 
@@ -210,8 +216,13 @@ class Matrix(Mapping):
                 coords.sort(key=lambda c: (c-bot.pos).mlen() + abs(c.y) * self.size)
                 bot.pcache = {"pos": bot.pos, "coords": coords}
             for c in coords:
-                if self._ndarray[c.x,c.y,c.z] == Voxel.MODEL and self.would_be_grounded(c):
-                    return c
+                minX = bot.region["minX"]
+                maxX = bot.region["maxX"]
+                minZ = bot.region["minZ"]
+                maxZ = bot.region["maxZ"]
+                if minZ <= c.z < maxZ and minX <= c.z < maxX:
+                    if self._ndarray[c.x,c.y,c.z] == Voxel.MODEL and self.would_be_grounded(c):
+                        return c
             else:
                 if bot.pos.y < max([b.pos.y for b in bot.state.bots]):
                     bot.smove(UP)
