@@ -305,14 +305,15 @@ class State(object):
         return math.log2(self.R)*1000
 
     @classmethod
-    def create(cls, problem=1):
-        self = cls(Matrix(problem=problem))
+    def create(cls, **kwargs):
+        self = cls(Matrix(**kwargs))
         bot = Bot(state=self)
         self.matrix.toggle_bot(bot.pos) # enter voxel
         self.bots.append(bot)
-        test = 'dfltEnergy/LA{:03d}'.format(problem)
-        if os.path.isfile(test):
-            self.default_energy = int(open(test, 'r').read(), 0)
+        if 'problem' in kwargs:
+            test = 'dfltEnergy/LA{:03d}'.format(kwargs['problem'])
+            if os.path.isfile(test):
+                self.default_energy = int(open(test, 'r').read(), 0)
         return self
 
     def is_model_finished(self):

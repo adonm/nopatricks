@@ -22,12 +22,12 @@ if __name__ == '__main__':
     target_t = None
 
     if raw_args.source:
-        source_t = main(fileobj=raw_args.source)
+        source_t, success = main(fileobj=raw_args.source)
         for instr in unprint(source_t.trace, skip_halt=raw_args.target is not None):
             raw_args.output.write(instr.export_data())
 
     if raw_args.target:
-        target_t = main(fileobj=raw_args.target)
+        target_t, success = main(fileobj=raw_args.target)
         for instr in target_t.trace:
             raw_args.output.write(instr.export_data())
 
