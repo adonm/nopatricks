@@ -148,6 +148,19 @@ def shortest_path_algo(st):
 
     st.step_all()
 
+
+if __name__ == '__main__':
+    problem = int(sys.argv[1])
+    suffix = ""
+    st = state.State.create(problem=problem)
+    try:
+        cProfile.run("shortest_path_algo(st)", sort="cumulative")
+    except Exception as e:
+        print(e)
+        suffix = "_failed"
+
+    bot = st.bots[0]
+
     for bot2 in st.bots[1:]:
         for a in bot.pos.adjacent(st.R):
             if st.matrix[a].is_void():
@@ -161,12 +174,7 @@ def shortest_path_algo(st):
         bot2.fusions(bot.pos - bot2.pos)
         st.step_all()
 
-if __name__ == '__main__':
-    problem = int(sys.argv[1])
-    st = state.State.create(problem=problem)
-    cProfile.run("shortest_path_algo(st)", sort="cumulative")
     # shortest_path_algo(st)
-    bot = st.bots[0]
     back_to_base(st, bot)
     bot.halt()
 
@@ -176,5 +184,5 @@ if __name__ == '__main__':
     print( st )
     print( 'energy: {}, default: {}, score: {:0.3f}/{:0.3f}'.format( st.energy, st.default_energy, st.score, st.score_max ) )
     data = commands.export_nbt( st.trace )
-    with open("submission/FA"+str(problem).zfill(3)+".nbt", "wb") as file:
+    with open("submission/FA"+str(problem).zfill(3)+suffix+".nbt", "wb") as file:
         file.write(data)
