@@ -187,15 +187,18 @@ class Matrix(Mapping):
             return False
         return p.y == 0 or len([n for n in p.adjacent(self.size) if self._ndarray[(n.x,n.y,n.z)] & Voxel.GROUNDED]) > 0
 
-    def to_fill(self):
-        return [Coord(int(x), int(y), int(z)) for x,y,z in np.transpose(np.where(self._ndarray == Voxel.MODEL))]
+    def to_fill(self, limit):
+        # numpy hax for more speed
+        coords = np.transpose(np.where(self._ndarray == Voxel.MODEL))
+        # sort by column 1 (y) and limit to only limit records before instantiating coord objects
+        return [Coord(int(x), int(y), int(z)) for x,y,z in coords[coords[:,1].argsort()][:limit]]
 
     def fill_next(self, bot=None):
         if bot: # sort coords by distance from bot
-            if hasattr(bot, "pcache") and bot.pcache and (bot.pcache["pos"] - bot.pos).mlen() < 20:
+            if hasattr(bot, "pcache") and bot.pcache and (bot.pcache["pos"] - bot.pos).mlen() < 5:
                 coords = bot.pcache["coords"]
             else:
-                coords = self.to_fill()
+                coords = self.to_fill(int(self.nmodel / self.size))
                 coords.sort(key=lambda c: (c-bot.pos).mlen() + abs(c.y) * self.size)
                 bot.pcache = {"pos": bot.pos, "coords": coords}
             minX = bot.region["minX"]
@@ -366,7 +369,9 @@ class Bot(object): # nanobot
     # region contains min/max for all coords
     region: dict = field(default_factory = lambda: {
         "minX": 0,
-        "maxX": 1000
+        "maxX": 1000,
+        "minZ": 0,
+        "maxZ": 1000
     })
 
     def __getattr__(self, name):

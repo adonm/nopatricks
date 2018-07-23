@@ -52,7 +52,7 @@ def solve(st):
             if pt is None:
                 continue
             else:
-                if (pt - bot.pos).mlen() == 1:
+                if (pt - bot.pos).mlen() == 1 and pt.y <= bot.pos.y:
                     bot.fill(pt - bot.pos)
                     if st.matrix.nfull % 100 == 0:
                         # print every 100 fills
@@ -71,6 +71,8 @@ def solve(st):
                                 compress(st, bot, path)
                                 found=True
                                 break
+                            elif bot.pos.y < st.R - 1:
+                                bot.smove(UP)
                     else:
                         stuck_steps += 1
                         print("bot at {} can't get to {} (no void adjacent)".format(bot.pos, pt))
@@ -96,7 +98,7 @@ def shortest_path_algo(st):
 
     minX, maxX, minY, maxY, minZ, maxZ = st.matrix.bounds
     print(st.matrix.bounds)
-    minarea, maxbots = 5 * 5, 20
+    minarea, maxbots = 4 * 4, 40
     width, depth = maxX - minX, maxZ - minZ
     mostarea = width * depth / maxbots
     rsize = ceil(sqrt(max(mostarea, minarea)))
@@ -126,7 +128,7 @@ def shortest_path_algo(st):
 
     for i in range(1, nbots):
         # print(st.bots[0].seeds)
-        st.bots[0].fission(FORWARD, 0)
+        sorted(st.bots, key=lambda bot: -len(bot.seeds))[0].fission(FORWARD, 0)
         st.step_all()
         b = st.bots[i]
         b.region = regions[nbots-i-1]
