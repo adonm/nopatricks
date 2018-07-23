@@ -126,10 +126,11 @@ def solve(st):
                             elif bot.pos.y < st.R - 1:
                                 bot.smove(UP)
                     else:
-                        # stuck_steps += 1
+                        stuck_steps += 1
                         print("bot at {} can't get to {} (no void adjacent)".format(bot.pos, pt))
-                        dig_mofo(st, bot, pt)
-                        if stuck_steps > 100:
+                        if stuck_steps > st.R:
+                            dig_mofo(st, bot, pt)
+                        if stuck_steps > st.R * 2:
                             raise ValueError("stuck too long")
                     if not found:
                         stuck_bots += 1
