@@ -163,43 +163,50 @@ def shortest_path_algo(st):
     
     st.step_all()
 
+    minX, maxX, minY, maxY, minZ, maxZ = st.matrix.bounds
+    minX, maxX, minY, maxY, minZ, maxZ = (int(minX), int(maxX), int(minY), int(maxY), int(minZ), int(maxZ))
+
+    if maxX-minX>28 or maxY-minY>28 or maxZ-minZ>28:
+        raise Exception("model too big")
+
     corners = [
-        Coord(1,0,0),
-        Coord(st.R-1,0,1),
-        Coord(0,st.R-1,1),
-        Coord(st.R-1,st.R-1,1),
-        Coord(1,0,st.R-1),
-        Coord(st.R-2,0,st.R-1),
-        Coord(1,st.R-1,st.R-1),
-        Coord(st.R-2,st.R-1,st.R-1),
+        Coord(minX, minY, minZ),
+        Coord(maxX, minY, minZ),
+        Coord(minX, maxY, minZ),
+        Coord(maxX, maxY, minZ),
+        Coord(minX, maxY, maxZ),
+        Coord(maxX, maxY, maxZ),
+        Coord(minX, minY, maxZ),
+        Coord(maxX, minY, maxZ),
     ]
 
-    near = [
-        Coord(1,0,1),
-        Coord(st.R-2,0,1),
-        Coord(1,st.R-2,1),
-        Coord(st.R-2,st.R-2,1),
-        Coord(1,0,st.R-2),
-        Coord(st.R-2,0,st.R-2),
-        Coord(1,st.R-2,st.R-2),
-        Coord(st.R-2,st.R-2,st.R-2),
+    cornersf = [
+        Coord(maxX, maxY, maxZ),
+        Coord(minX, maxY, maxZ),
+        Coord(maxX, minY, maxZ),
+        Coord(minX, minY, maxZ),
+        Coord(maxX, minY, minZ),
+        Coord(minX, minY, minZ),
+        Coord(maxX, maxY, minZ),
+        Coord(minX, maxY, minZ),
     ]
 
-    far = [
-        Coord(st.R-2,st.R-2,st.R-2),
-        Coord(1,st.R-2,st.R-2),
-        Coord(st.R-2,0,st.R-2),
-        Coord(1,0,st.R-2),
-        Coord(st.R-2,st.R-2,1),
-        Coord(1,st.R-2,1),
-        Coord(st.R-2,0,1),
-        Coord(1,0,1),
-    ]
-
-    for i in range(8):
-        path = shortest_path(st, st.bots[i], corners[i])
+    near = []
+    far=[]
+    for i in range(4):
+        near.append(corners[i])
+        far.append(cornersf[i])
+        path = shortest_path(st, st.bots[i], corners[i] + BACK)
         compress(st, st.bots[i], path)
         st.step_all()
+    for i in range(4,8):
+        near.append(corners[i])
+        far.append(cornersf[i])
+        path = shortest_path(st, st.bots[i], corners[i] + FORWARD)
+        compress(st, st.bots[i], path)
+        st.step_all()
+        
+    st.step_all()
 
 
     for i in range(8):
@@ -213,13 +220,7 @@ if __name__ == '__main__':
     problem = int(sys.argv[1])
     suffix = ""
     st = state.State.create(problem=problem)
-    if st.R>28:
-        raise Exception("too big")
-    try:
-        cProfile.run("shortest_path_algo(st)", sort="cumulative")
-    except Exception as e:
-        print(e)
-        suffix = "_failed"
+    cProfile.run("shortest_path_algo(st)", sort="cumulative")
 
     bot = st.bots[0]
 
