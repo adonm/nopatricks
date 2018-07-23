@@ -69,7 +69,7 @@ class Matrix(Mapping):
         self.model_pts = None
         if 'size' in kwargs:
             self.size = kwargs['size']
-            self._ndarray.flat = np.zeros(shape=(size, size, size), dtype=np.dtype('u1'))
+            self._ndarray = np.zeros(shape=(self.size, self.size, self.size), dtype=np.dtype('u1'))
         elif 'filename' in kwargs:
             self.size, self._ndarray = Matrix._load_file(kwargs['filename'])
         elif 'fileobj' in kwargs:
