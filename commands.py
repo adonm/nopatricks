@@ -315,6 +315,15 @@ def read_nbt_iter( data ):
         elif data[pointer] & 0b111 == 0b011:
             yield Fill( data[pointer:pointer+1] )
             pointer += 1
+        elif data[pointer] & 0b111 == 0b010:
+            yield Void( data[pointer:pointer+1] )
+            pointer += 1
+        elif data[pointer] & 0b111 == 0b001:
+            yield GFill( data[pointer:pointer+4] )
+            pointer += 4
+        elif data[pointer] & 0b111 == 0b000:
+            yield GVoid( data[pointer:pointer+4] )
+            pointer += 4
         else:
             raise ValueError( 'wasn\'t expecting a {:02x} at {}'.format( data[pointer], pointer ) )
 
