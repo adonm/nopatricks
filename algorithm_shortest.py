@@ -24,10 +24,11 @@ def next_best_point(st, bot=None):
                 return coord
 
     for y, x, z in np.transpose(np.where(np.transpose(st.matrix._ndarray, (1, 0, 2)) == state.Voxel.MODEL)):
-        coord = Coord(int(x), int(y), int(z))
-        if st.matrix.would_be_grounded(coord):
-            # print(coord)
-            return coord
+        if minX - (maxX-minX)/2 <= x < maxX + (maxX-minX)/2 and minZ - (maxZ-minZ)/2 <= z < maxZ + (maxZ-minZ)/2:
+            coord = Coord(int(x), int(y), int(z))
+            if st.matrix.would_be_grounded(coord):
+                # print(coord)
+                return coord
 
     return None
 
