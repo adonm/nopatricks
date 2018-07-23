@@ -196,7 +196,7 @@ class Matrix(Mapping):
 
     def to_fill(self, limit):
         # numpy hax for more speed
-        coords = np.transpose(np.where(self._ndarray == Voxel.MODEL))
+        coords = np.transpose(np.where(self._ndarray & (Voxel.MODEL | Voxel.BOT)))
         # sort by column 1 (y) and limit to only limit records before instantiating coord objects
         return [Coord(int(x), int(y), int(z)) for x,y,z in coords[coords[:,1].argsort()][:limit]]
 
