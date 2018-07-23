@@ -544,6 +544,7 @@ class Bot(object): # nanobot
         matrix = self.state.matrix
         if matrix[p].is_full():
             matrix.set_void(p)
+            self.state.energy -= 12
         else:
             self._wait()
             return
