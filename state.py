@@ -210,7 +210,7 @@ class Matrix(Mapping):
                     if self._ndarray[c.x,c.y,c.z] == Voxel.MODEL and self.would_be_grounded(c):
                         return c
             else:
-                if bot.pos.y < self.size - 1:
+                if bot.pos.y < max([b.pos.y for b in bot.state.bots]):
                     bot.smove(UP)
                 bot.pcache = None
                 return None
