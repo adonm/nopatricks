@@ -32,6 +32,33 @@ def next_best_point(st, bot=None):
 
     return None
 
+def dig_mofo(st, bot, pt):
+    print("dig dig dig")
+    print(bot.pos)
+    bot.actions=[]
+    print(pt)
+    start = Coord(0, pt.y, pt.z)
+    path = shortest_path(st, bot, start)
+    if path is not None:
+        # print("got path")
+        print(path)
+        compress(st, bot, path)
+    else:
+        print("couldn't find path to pt: "+str(pt))
+    
+    for i in range(pt.x-1):
+        bot.smove(LEFT)
+        start += LEFT
+        bot.void(LEFT)
+    bot.fill(LEFT)
+    for i in range(pt.x-1):
+        bot.smove(RIGHT)
+        start += RIGHT
+        if st.matrix[start + LEFT].is_model():
+            bot.fill(LEFT)
+
+    print("finished digging")
+    
 
 def solve(st):
     stuck_steps=0
@@ -75,8 +102,9 @@ def solve(st):
                             elif bot.pos.y < st.R - 1:
                                 bot.smove(UP)
                     else:
-                        stuck_steps += 1
+                        # stuck_steps += 1
                         print("bot at {} can't get to {} (no void adjacent)".format(bot.pos, pt))
+                        dig_mofo(st, bot, pt)
                         if stuck_steps > 100:
                             raise ValueError("stuck too long")
                     if not found:
@@ -148,6 +176,7 @@ def shortest_path_algo(st):
     print("finished solve")
 
     st.step_all()
+
 
 
 if __name__ == '__main__':

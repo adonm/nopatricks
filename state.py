@@ -127,6 +127,8 @@ class Matrix(Mapping):
     def coord_index(self, coord):
         if not isinstance(coord, Coord):
             raise TypeError()
+        if not self.is_valid_point(coord):
+            print("invalid pt: "+str(coord))
         assert self.is_valid_point(coord)
         return (coord.x, coord.y, coord.z)
 
@@ -181,6 +183,11 @@ class Matrix(Mapping):
         else:
             pass # todo fill region
         self._nfull = None # invalidate cache
+
+    def set_void(self, c1):
+        # void a voxel
+        assert (self._ndarray[(c1.x, c1.y, c1.z)] & Voxel.FULL)
+        self._ndarray[(c1.x, c1.y, c1.z)] ^= Voxel.FULL
 
     def would_be_grounded(self, p):
         if self[p].val & Voxel.BOT:
@@ -530,6 +537,16 @@ class Bot(object): # nanobot
 
     def _void(self, nd):
         print('FIXME: Bot.void()')
+        p = self.pos + nd
+        if p in self.state.current_moves:
+            self._wait()
+            return
+        matrix = self.state.matrix
+        if matrix[p].is_full():
+            matrix.set_void(p)
+        else:
+            self._wait()
+            return
         if self.state.enable_trace:
             self.state.trace.append( commands.Void().set_nd( nd.dx, nd.dy, nd.dz ) )
 
