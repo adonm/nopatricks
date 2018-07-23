@@ -1,15 +1,21 @@
-for P in {100..186}
+for P in $(seq -f "%03g" 1 186)
 do
-	touch submission/LA$P.nbt
+	touch submission/FA$P.nbt
+    touch submission/FD$P.nbt
+done
+
+for P in $(seq -f "%03g" 1 115)
+do
+	touch submission/FR$P.nbt
 done
 
 cd submission
-zip ../submission-`date +%s`.zip ./LA*.nbt
+zip ../submission-`date +%s`.zip ./F*.nbt
 cd ..
 cp submission-`date +%s`.zip submission.zip
 
 SHA=`openssl sha -sha256 submission.zip | cut -d ' ' -f 2`
-URL=https://www.dropbox.com/s/v7lgho6gr4u3h62/submission-1532164567.zip?dl=0
+URL=https://www.dropbox.com/s/8de8xdxq2fbv6g1/submission-1532349788.zip?dl=0
 
 curl -L \
   --data-urlencode action=submit \
