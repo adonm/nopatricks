@@ -536,7 +536,6 @@ class Bot(object): # nanobot
             self.state.trace.append( commands.Fill().set_nd( nd.dx, nd.dy, nd.dz ) )
 
     def _void(self, nd):
-        print('FIXME: Bot.void()')
         p = self.pos + nd
         if p in self.state.current_moves:
             self._wait()

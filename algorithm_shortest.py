@@ -37,25 +37,49 @@ def dig_mofo(st, bot, pt):
     print(bot.pos)
     bot.actions=[]
     print(pt)
-    start = Coord(0, pt.y, pt.z)
-    path = shortest_path(st, bot, start)
+    path = None
+    
+    if path is None:
+        start = Coord(st.R-1, pt.y, pt.z)
+        path = shortest_path(st, bot, start)
+        dir = RIGHT
+        n = st.R-pt.x-2
+    
+    if path is None:
+        start = Coord(pt.x, pt.y, 0)
+        path = shortest_path(st, bot, start)
+        dir = FORWARD
+        n = pt.z-1
+
+    if path is None:
+        start = Coord(pt.x, pt.y, st.R-1)
+        path = shortest_path(st, bot, start)
+        dir = BACK
+        n = st.R-pt.z-2
+    
+    if path is None:
+        start = Coord(0, pt.y, pt.z)
+        path = shortest_path(st, bot, start)
+        dir = LEFT
+        n = pt.x-1
+
     if path is not None:
         # print("got path")
         print(path)
         compress(st, bot, path)
     else:
-        print("couldn't find path to pt: "+str(pt))
+        print("couldn't find path to pt: "+str(start))
     
-    for i in range(pt.x-1):
-        bot.smove(LEFT)
-        start += LEFT
-        bot.void(LEFT)
-    bot.fill(LEFT)
-    for i in range(pt.x-1):
-        bot.smove(RIGHT)
-        start += RIGHT
-        if st.matrix[start + LEFT].is_model():
-            bot.fill(LEFT)
+    for i in range(n):
+        bot.smove(dir)
+        start += dir
+        bot.void(dir)
+    bot.fill(dir)
+    for i in range(n):
+        bot.smove(dir.mul(-1))
+        start += dir.mul(-1)
+        if st.matrix[start + dir].is_model():
+            bot.fill(dir)
 
     print("finished digging")
     
