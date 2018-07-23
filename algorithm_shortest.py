@@ -33,7 +33,7 @@ def next_best_point(st, bot=None):
 
 
 def solve(st):
-    n = 0
+    stuck_steps=0
     while not st.is_model_finished():
         stuck_bots=0
         for bot in st.bots:
@@ -54,6 +54,9 @@ def solve(st):
             else:
                 if (pt - bot.pos).mlen() == 1:
                     bot.fill(pt - bot.pos)
+                    if st.matrix.nfull % 100 == 0:
+                        # print every 100 fills
+                        print(st)
                 else:
                     found = False
                     for a in pt.adjacent(st.R):
@@ -68,12 +71,11 @@ def solve(st):
                                 compress(st, bot, path)
                                 found=True
                                 break
-                            elif len(bot.actions)==0:
-                                bot.fill(pt - bot.pos)
-                                found=True
-                                break
                     else:
+                        stuck_steps += 1
                         print("bot at {} can't get to {} (no void adjacent)".format(bot.pos, pt))
+                        if stuck_steps > 100:
+                            raise ValueError("stuck too long")
                     if not found:
                         stuck_bots += 1
         if any(len(bot.actions)>0 for bot in st.bots):
@@ -86,7 +88,6 @@ def solve(st):
 
         if stuck_bots == len(st.bots):
             raise ValueError( 'all bots stuck!' )
-            break
 
 
 def shortest_path_algo(st):
