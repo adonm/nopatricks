@@ -72,6 +72,8 @@ class Matrix(Mapping):
             self._ndarray.flat = np.zeros(shape=(size, size, size), dtype=np.dtype('u1'))
         elif 'filename' in kwargs:
             self.size, self._ndarray = Matrix._load_file(kwargs['filename'])
+        elif 'fileobj' in kwargs:
+            self.size, self._ndarray = Matrix._load_fileobj(kwargs['fileobj'])
         else:
             self.size, self._ndarray = Matrix._load_prob(kwargs.get('problem', 1))
 
@@ -110,16 +112,20 @@ class Matrix(Mapping):
 
     @staticmethod
     def _load_file(filename):
-        with open(filename, 'rb') as fb:
-            bytedata = fb.read()
-            size = int(bytedata[0])
-            ndarray = np.zeros(shape=(size, size, size), dtype=np.dtype('u1'))
-            index = 0
-            for byte in bytedata[1:]:
-                for bit in to_uint64_le( unpack_bits( byte ) ):
-                    ndarray.flat[index] = Voxel.empty(bit).val
-                    index += 1
-            return size, ndarray
+        with open(filename, 'rb') as fp:
+            return Matrix._load_fileobj(fp)
+
+    @staticmethod
+    def _load_fileobj(fp):
+        bytedata = fp.read()
+        size = int(bytedata[0])
+        ndarray = np.zeros(shape=(size, size, size), dtype=np.dtype('u1'))
+        index = 0
+        for byte in bytedata[1:]:
+            for bit in to_uint64_le( unpack_bits( byte ) ):
+                ndarray.flat[index] = Voxel.empty(bit).val
+                index += 1
+        return size, ndarray
 
     def is_valid_point(self, coord):
         return (0 <= coord.x < self.size) and (0 <= coord.y < self.size) and (0 <= coord.z < self.size)

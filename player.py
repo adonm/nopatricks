@@ -36,6 +36,12 @@ if __name__ == '__main__':
                     bot.fusions( coord.NearDiff( c.ndx, c.ndy, c.ndz ) )
                 elif klass == commands.Fill:
                     bot.fill( coord.NearDiff( c.ndx, c.ndy, c.ndz ) )
+                elif klass == commands.Void:
+                    bot.void( coord.NearDiff( c.ndx, c.ndy, c.ndz ) )
+#                elif klass == commands.GFill:
+#                    bot.gfill( coord.NearDiff( c.ndx, c.ndy, c.ndz ), coord.FarDiff( c.fdx, c.fdy, c.fdz ) )
+#                elif klass == commands.GVoid:
+#                    bot.gfill( coord.NearDiff( c.ndx, c.ndy, c.ndz ), coord.FarDiff( c.fdx, c.fdy, c.fdz ) )
                 else:
                     raise TypeError( 'oh noes a {}'.format( klass ) )
             st.step()
