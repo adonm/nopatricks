@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-from coord import Coord
+from coord import Coord, UP
 import commands
 
 from mrcrowbar.utils import to_uint64_le, unpack_bits
@@ -207,12 +207,10 @@ class Matrix(Mapping):
                     if self._ndarray[c.x,c.y,c.z] == Voxel.MODEL and self.would_be_grounded(c):
                         return c
             else:
-                for c in coords:
-                    if self._ndarray[c.x,c.y,c.z] == Voxel.MODEL and self.would_be_grounded(c):
-                        return c
-                else:
-                    bot.pcache = None
-                    return None
+                if bot.pos.y < self.size - 1:
+                    bot.smove(UP)
+                bot.pcache = None
+                return None
         return coords[0]
 
     def yplane(self, y):

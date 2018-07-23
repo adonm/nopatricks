@@ -31,21 +31,14 @@ def next_best_point(st, bot=None):
 
     return None
 
-def fill(st, bot, dir):
-    pts = [
-        bot.pos + dir,
-        bot.pos + dir + BACK,
-        bot.pos + dir + FORWARD
-    ]
-    for pt in pts:
-        if st.matrix.is_valid_point(pt) and st.matrix.would_be_grounded(pt) and st.matrix._ndarray[pt.x, pt.y, pt.z] == state.Voxel.MODEL and (pt - bot.pos).mlen()==1:
-            bot.fill(pt - bot.pos)
 
 def solve(st):
     n = 0
     while not st.is_model_finished():
         stuck_bots=0
         for bot in st.bots:
+            if len(bot.actions) > 0:
+                continue
             # print(bot)
             # n+=1
             # if n>1000:
@@ -56,10 +49,11 @@ def solve(st):
             # print("pt")
             # print(pt)
             # print("")
-            if pt is not None:
+            if pt is None:
+                continue
+            else:
                 if (pt - bot.pos).mlen() == 1:
-                    # print("filling")
-                    fill(st, bot, pt - bot.pos)
+                    bot.fill(pt - bot.pos)
                 else:
                     found = False
                     for a in pt.adjacent(st.R):
@@ -75,14 +69,14 @@ def solve(st):
                                 found=True
                                 break
                             elif len(bot.actions)==0:
-                                fill(st, bot, pt - a)
+                                bot.fill(pt - bot.pos)
                                 found=True
                                 break
                     else:
                         print("bot at {} can't get to {} (no void adjacent)".format(bot.pos, pt))
                     if not found:
                         stuck_bots += 1
-        while any(len(bot.actions)>0 for bot in st.bots):
+        if any(len(bot.actions)>0 for bot in st.bots):
             # for bot in st.bots:
             #     print(bot.pos)
                 # if len(bot.actions)>0:
@@ -117,12 +111,14 @@ def shortest_path_algo(st):
             rZ = min([maxZ, minZ + (z+1) * rsize])
             if maxZ - rZ < rsize:
                 rZ = maxZ
-            regions.append({
+            region = {
                 "minX": int(minX + x * rsize),
                 "maxX": int(rX),
                 "minZ": int(minZ + z * rsize),
                 "maxZ": int(rZ)
-            })
+            }
+            print(region)
+            regions.append(region)
     # print(convex_hull(st))
     # print(st.matrix.bounds)
     st.step_all()
